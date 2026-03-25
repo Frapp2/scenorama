@@ -346,6 +346,10 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const hasRun = useRef(!!cachedAnalysis);
+  const [apiKey, setApiKey] = useState(() => {
+    try { return localStorage.getItem("scenorama-api-key") || ""; } catch { return ""; }
+  });
+  const [apiKeySaved, setApiKeySaved] = useState(false);
 
   const section = (title) => (
     <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.12em", color: th.accent, marginBottom: 8, marginTop: 22, textTransform: "uppercase" }}>{title}</div>
@@ -359,6 +363,10 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
 
   const runAnalysis = useCallback(() => {
     if (!rawText || rawText.length < 200) return;
+    if (!apiKey || !apiKey.startsWith("sk-ant-")) {
+      setError("Entrez votre clé API Anthropic pour activer l'analyse.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -438,15 +446,11 @@ ${fullText}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120000);
 
-    fetch("https://api.anthropic.com/v1/messages", {
+    fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       signal: controller.signal,
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 3000,
-        messages: [{ role: "user", content: prompt }],
-      }),
+      body: JSON.stringify({ prompt, apiKey }),
     })
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -543,6 +547,42 @@ ${fullText}`;
         <button onClick={onClose} style={{ background: "transparent", border: "none", color: th.muted, fontSize: 18, cursor: "pointer" }}>×</button>
       </div>
       {fName && <div style={{ fontSize: 11, color: th.muted, fontStyle: "italic", marginBottom: 14 }}>{fName}</div>}
+
+      {/* API Key input */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 10, color: th.muted, fontWeight: 600, letterSpacing: "0.06em", marginBottom: 5, textTransform: "uppercase" }}>
+          Clé API Anthropic
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => { setApiKey(e.target.value); setApiKeySaved(false); }}
+            placeholder="sk-ant-api03-…"
+            style={{
+              flex: 1, padding: "6px 10px", fontSize: 11,
+              background: th.inputBg, color: th.text,
+              border: `1px solid ${apiKey && apiKey.startsWith("sk-ant-") ? th.accent : th.inputBorder}`,
+              borderRadius: 5, fontFamily: fm, outline: "none",
+            }}
+          />
+          <button
+            onClick={() => {
+              try { localStorage.setItem("scenorama-api-key", apiKey); setApiKeySaved(true); } catch {}
+            }}
+            style={{
+              padding: "6px 12px", fontSize: 10, fontWeight: 600,
+              background: apiKeySaved ? th.accent : "transparent",
+              color: apiKeySaved ? th.contrast : th.accent,
+              border: `1px solid ${th.accent}`, borderRadius: 5,
+              cursor: "pointer", fontFamily: fm, whiteSpace: "nowrap",
+            }}
+          >{apiKeySaved ? "Sauvegardée ✓" : "Sauvegarder"}</button>
+        </div>
+        <div style={{ fontSize: 9, color: th.hint, marginTop: 4, lineHeight: 1.4 }}>
+          Votre clé reste dans votre navigateur. Chaque analyse consomme vos tokens Anthropic.
+        </div>
+      </div>
 
       {/* Technical stats — always available */}
       {section("Données techniques")}
