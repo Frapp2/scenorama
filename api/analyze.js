@@ -15,9 +15,14 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Clé API non configurée." });
   }
 
-  const { prompt } = req.body || {};
+  let { prompt } = req.body || {};
   if (!prompt || typeof prompt !== "string" || prompt.length < 100) {
     return res.status(400).json({ error: "Contenu manquant." });
+  }
+
+  // Tronquer si trop long pour tenir dans le timeout de 60s
+  if (prompt.length > 80000) {
+    prompt = prompt.slice(0, 80000) + "\n\n[... texte tronqué pour l'analyse — scénario complet trop long]";
   }
 
   try {
