@@ -436,28 +436,64 @@ Scénario à analyser :
 ${fullText}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
+    const timeout = setTimeout(() => controller.abort(), 600000); // 10 min pour les longs scénarios
 
-    fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({ prompt }),
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        // Handle API-level errors
-        if (data.error) throw new Error(data.error.message || "Erreur API");
-        if (!data.content || !data.content.length) throw new Error("Réponse vide");
+    (async () => {
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({ prompt }),
+        });
 
-        const text = data.content.map((c) => c.text || "").join("");
-        if (!text.trim()) throw new Error("Réponse vide");
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errText}`);
+        }
+
+        // Read the SSE stream from the Edge function
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = "";
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Process complete SSE lines
+          const lines = buffer.split("\n");
+          buffer = lines.pop(); // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") continue;
+
+            try {
+              const evt = JSON.parse(data);
+              // Anthropic SSE: content_block_delta contains text chunks
+              if (evt.type === "content_block_delta" && evt.delta && evt.delta.text) {
+                fullText += evt.delta.text;
+              }
+              // Check for API errors in the stream
+              if (evt.type === "error") {
+                throw new Error(evt.error?.message || "Erreur API dans le stream");
+              }
+            } catch (parseErr) {
+              // Ignore non-JSON SSE lines (like event types, comments)
+              if (parseErr.message.includes("Erreur API")) throw parseErr;
+            }
+          }
+        }
+
+        if (!fullText.trim()) throw new Error("Réponse vide");
 
         // Clean and parse JSON — handle various AI formatting issues
-        let clean = text.trim();
+        let clean = fullText.trim();
         clean = clean.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
         // Remove any text before the first {
         const firstBrace = clean.indexOf("{");
@@ -470,7 +506,7 @@ ${fullText}`;
         try {
           parsed = JSON.parse(clean);
         } catch (parseErr) {
-          console.error("JSON parse failed:", clean.slice(0, 200));
+          console.error("JSON parse failed:", clean.slice(0, 500));
           throw new Error("L'analyse a été générée mais le format est invalide. Réessayez.");
         }
 
@@ -507,15 +543,17 @@ ${fullText}`;
         setAnalysis(safe);
         setCachedAnalysis(safe);
         setError(null);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (err.name === "AbortError") {
-          setError("L'analyse a pris trop de temps (>2 min). Réessayez.");
+          setError("L'analyse a pris trop de temps (>10 min). Réessayez.");
         } else {
           setError(err.message || "Erreur lors de l'analyse. Réessayez.");
         }
-      })
-      .finally(() => { clearTimeout(timeout); setLoading(false); });
+      } finally {
+        clearTimeout(timeout);
+        setLoading(false);
+      }
+    })();
   }, [rawText]);
 
   // Auto-run on first open

@@ -1,53 +1,63 @@
-export const config = { maxDuration: 60 };
+export const config = { runtime: 'edge' };
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
-
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+export default async function handler(req) {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "Clé API non configurée." });
-  }
-
-  let { prompt } = req.body || {};
-  if (!prompt || typeof prompt !== "string" || prompt.length < 100) {
-    return res.status(400).json({ error: "Contenu manquant." });
-  }
-
-  // Tronquer si trop long pour tenir dans le timeout de 60s
-  if (prompt.length > 80000) {
-    prompt = prompt.slice(0, 80000) + "\n\n[... texte tronqué pour l'analyse — scénario complet trop long]";
-  }
-
-  try {
-    const upstream = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 3000,
-        messages: [{ role: "user", content: prompt }],
-      }),
+    return new Response(JSON.stringify({ error: "Clé API non configurée." }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
-
-    const data = await upstream.json();
-
-    if (!upstream.ok) {
-      return res.status(upstream.status).json({ error: data?.error?.message || "Erreur API." });
-    }
-
-    return res.status(200).json(data);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
   }
+
+  const body = await req.json();
+  const prompt = body.prompt;
+
+  if (!prompt || prompt.length < 100) {
+    return new Response(JSON.stringify({ error: "Contenu manquant." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+
+  const upstream = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 3000,
+      stream: true,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!upstream.ok) {
+    const err = await upstream.text();
+    return new Response(err, {
+      status: upstream.status,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+    });
+  }
+
+  // Stream la réponse directement au client
+  return new Response(upstream.body, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
 }
