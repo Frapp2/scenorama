@@ -26,11 +26,9 @@ export default async function handler(req, res) {
 
   // Liste les modèles disponibles pour trouver le bon
   const MODELS = [
+    "claude-sonnet-4-6",
     "claude-sonnet-4-5-20250514",
     "claude-3-5-sonnet-20241022",
-    "claude-3-5-sonnet-latest",
-    "claude-sonnet-4-20250514",
-    "claude-3-haiku-20240307",
   ];
 
   let lastError = null;
