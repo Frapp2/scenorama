@@ -9,14 +9,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { prompt, apiKey } = req.body || {};
-
-  if (!apiKey || typeof apiKey !== "string" || !apiKey.startsWith("sk-ant-")) {
-    return res.status(400).json({ error: "Clé API Anthropic invalide ou manquante." });
+  // Clé API stockée côté serveur (variable d'environnement Vercel)
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "Clé API non configurée sur le serveur." });
   }
+
+  const { prompt } = req.body || {};
 
   if (!prompt || typeof prompt !== "string" || prompt.length < 100) {
     return res.status(400).json({ error: "Contenu manquant." });
+  }
+
+  // Protection basique : limite la taille du prompt (évite les abus)
+  if (prompt.length > 400000) {
+    return res.status(400).json({ error: "Scénario trop long." });
   }
 
   try {
