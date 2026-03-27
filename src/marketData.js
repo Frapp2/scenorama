@@ -3,6 +3,41 @@
 
 export const MARKET_DATA = {
 
+  // ── TOP 50 HISTORIQUE BOX OFFICE FRANCE (films français) ─────────
+  topHistorique: [
+    { rang: 1, titre: "Bienvenue chez les Ch'tis", date: "2008", entrees: 20489303, genre: "Comédie" },
+    { rang: 2, titre: "Intouchables", date: "2011", entrees: 19490688, genre: "Comédie dramatique" },
+    { rang: 3, titre: "La Grande Vadrouille", date: "1966", entrees: 17267607, genre: "Comédie / Aventure" },
+    { rang: 4, titre: "Astérix et Obélix : Mission Cléopâtre", date: "2002", entrees: 14559509, genre: "Comédie / Aventure" },
+    { rang: 5, titre: "Les Visiteurs", date: "1993", entrees: 13782991, genre: "Comédie" },
+    { rang: 6, titre: "Le Petit Monde de Don Camillo", date: "1952", entrees: 12791168, genre: "Comédie" },
+    { rang: 7, titre: "Qu'est-ce qu'on a fait au Bon Dieu ?", date: "2014", entrees: 12366033, genre: "Comédie" },
+    { rang: 8, titre: "Le Corniaud", date: "1965", entrees: 11739783, genre: "Comédie / Aventure" },
+    { rang: 9, titre: "Un p'tit truc en plus", date: "2024", entrees: 10830209, genre: "Comédie" },
+    { rang: 10, titre: "Les Bronzés 3 : Amis pour la vie", date: "2006", entrees: 10355930, genre: "Comédie" },
+    { rang: 11, titre: "Taxi 2", date: "2000", entrees: 10345901, genre: "Comédie / Action" },
+    { rang: 12, titre: "Trois hommes et un couffin", date: "1985", entrees: 10251465, genre: "Comédie" },
+    { rang: 13, titre: "Le Dîner de cons", date: "1998", entrees: 9247001, genre: "Comédie" },
+    { rang: 14, titre: "Astérix et Obélix contre César", date: "1999", entrees: 8948624, genre: "Comédie / Aventure" },
+    { rang: 15, titre: "La Vache et le prisonnier", date: "1959", entrees: 8844199, genre: "Comédie" },
+    { rang: 16, titre: "Les Choristes", date: "2004", entrees: 8636016, genre: "Drame / Comédie" },
+    { rang: 17, titre: "Rien à déclarer", date: "2011", entrees: 8150825, genre: "Comédie" },
+    { rang: 18, titre: "Les Visiteurs II", date: "1998", entrees: 8043129, genre: "Comédie" },
+    { rang: 19, titre: "La Vérité si je mens ! 2", date: "2001", entrees: 7826393, genre: "Comédie" },
+    { rang: 20, titre: "Le Gendarme de Saint-Tropez", date: "1964", entrees: 7809334, genre: "Comédie" },
+    { rang: 21, titre: "La Famille Bélier", date: "2014", entrees: 7450944, genre: "Comédie dramatique" },
+    { rang: 22, titre: "Les Aventures de Rabbi Jacob", date: "1973", entrees: 7295727, genre: "Comédie" },
+    { rang: 23, titre: "Les Trois Frères", date: "1995", entrees: 6897098, genre: "Comédie" },
+    { rang: 24, titre: "Astérix aux Jeux Olympiques", date: "2008", entrees: 6817803, genre: "Comédie / Aventure" },
+    { rang: 25, titre: "Qu'est-ce qu'on a encore fait au Bon Dieu ?", date: "2019", entrees: 6711618, genre: "Comédie" },
+    { rang: 26, titre: "Taxi", date: "1998", entrees: 6522121, genre: "Comédie / Action" },
+    { rang: 27, titre: "La Gloire de mon père", date: "1990", entrees: 6291402, genre: "Drame / Comédie" },
+    { rang: 28, titre: "Taxi 3", date: "2003", entrees: 6151691, genre: "Comédie / Action" },
+    { rang: 29, titre: "Les Tuche 3", date: "2018", entrees: 5687200, genre: "Comédie" },
+    { rang: 30, titre: "Marsupilami", date: "2026", entrees: 5670544, genre: "Comédie / Aventure" },
+    { rang: 31, titre: "La Ch'tite famille", date: "2018", entrees: 5626049, genre: "Comédie" },
+  ],
+
   // ── TOP BOX OFFICE FRANCE 2024 (films français) ──────────────────
   boxOffice2024: [
     { titre: "Un p'tit truc en plus", realisateur: "Artus", entrees: 10700000, genre: "Comédie", distrib: "Pan Distribution" },

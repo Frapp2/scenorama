@@ -377,13 +377,17 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
     // Build market context from embedded data
     const topFilms2024 = MARKET_DATA.boxOffice2024.slice(0, 10).map(f => `${f.titre} (${f.realisateur}) — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`).join("\n");
     const topFilms2023 = MARKET_DATA.boxOffice2023.slice(0, 8).map(f => `${f.titre} (${f.realisateur}) — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`).join("\n");
+    const topHistorique = MARKET_DATA.topHistorique.slice(0, 15).map(f => `#${f.rang} ${f.titre} (${f.date}) — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`).join("\n");
     const tendances = MARKET_DATA.tendances.join("\n");
     const cannes24 = `Palme d'Or : ${MARKET_DATA.cannes2024.palmeOr.titre} (${MARKET_DATA.cannes2024.palmeOr.realisateur}), Grand Prix : ${MARKET_DATA.cannes2024.grandPrix.titre}, Prix du Jury : ${MARKET_DATA.cannes2024.prixJury.titre}`;
     const cesar25 = `Meilleur film : ${MARKET_DATA.cesar2025.meilleurFilm}, Meilleur premier film : ${MARKET_DATA.cesar2025.meilleurPremierFilm}`;
 
     const prompt = `Tu es un lecteur professionnel de scénarios pour le cinéma et la télévision française. Tu travailles pour un comité de lecture de producteur. Analyse ce scénario et produis une fiche de lecture complète.
 
-CONTEXTE MARCHÉ (données réelles 2023-2025, utilise-les pour ancrer ton analyse) :
+CONTEXTE MARCHÉ (données réelles, utilise-les pour ancrer ton analyse) :
+
+Top 15 historique box-office France (films français) :
+${topHistorique}
 
 Box-office France 2024 — Top films français :
 ${topFilms2024}
@@ -401,6 +405,7 @@ Fréquentation 2024 : ${MARKET_DATA.frequentation[2024].total/1000000}M entrées
 
 UTILISE CES DONNÉES pour :
 - Comparer le scénario à des films récents RÉELS qui ont marché (ou pas) dans le même genre
+- Situer le potentiel du projet par rapport au box-office historique et récent
 - Évaluer le potentiel commercial en fonction des tendances actuelles
 - Recommander des plateformes en citant leurs succès récents réels
 - Identifier si le projet surfe sur une tendance porteuse ou va à contre-courant (et si c'est un atout ou un risque)
