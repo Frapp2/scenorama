@@ -371,16 +371,20 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
     setLoading(true);
     setError(null);
 
-    // Send the full screenplay — Claude Sonnet handles 200K tokens input
-    const fullText = rawText;
+    // Anthropic rate limit on $5 tier: 30K input tokens/min ≈ 100K chars
+    // Market context ≈ 5K tokens, prompt template ≈ 3K tokens → ~22K tokens left for screenplay
+    // 22K tokens ≈ 88K chars. We cap at 85K to be safe.
+    const MAX_SCRIPT_CHARS = 85000;
+    const isTruncated = rawText.length > MAX_SCRIPT_CHARS;
+    const fullText = isTruncated ? rawText.slice(0, MAX_SCRIPT_CHARS) + "\n\n[... TEXTE TRONQUÉ — le scénario fait " + rawText.length + " caractères, seuls les " + MAX_SCRIPT_CHARS + " premiers sont analysés pour respecter les limites API. L'analyse porte sur environ " + Math.round(MAX_SCRIPT_CHARS / rawText.length * 100) + "% du scénario.]" : rawText;
 
     // Build market context from embedded data
-    const fmtFilm = (f) => `${f.titre}${f.realisateur ? ` (${f.realisateur})` : ""} — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`;
-    const topFilms2026 = MARKET_DATA.boxOffice2026.slice(0, 12).map(fmtFilm).join("\n");
-    const topFilms2025 = MARKET_DATA.boxOffice2025.slice(0, 12).map(fmtFilm).join("\n");
-    const topFilms2024 = MARKET_DATA.boxOffice2024.slice(0, 12).map(fmtFilm).join("\n");
-    const topFilms2023 = MARKET_DATA.boxOffice2023.slice(0, 8).map(fmtFilm).join("\n");
-    const topHistorique = MARKET_DATA.topHistorique.slice(0, 15).map(f => `#${f.rang} ${f.titre} (${f.date}) — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`).join("\n");
+    const fmtFilm = (f) => `${f.titre} — ${(f.entrees/1000000).toFixed(1)}M — ${f.genre}`;
+    const topFilms2026 = MARKET_DATA.boxOffice2026.slice(0, 8).map(fmtFilm).join("\n");
+    const topFilms2025 = MARKET_DATA.boxOffice2025.slice(0, 8).map(fmtFilm).join("\n");
+    const topFilms2024 = MARKET_DATA.boxOffice2024.slice(0, 10).map(fmtFilm).join("\n");
+    const topFilms2023 = MARKET_DATA.boxOffice2023.slice(0, 6).map(fmtFilm).join("\n");
+    const topHistorique = MARKET_DATA.topHistorique.slice(0, 10).map(f => `${f.titre} (${f.date}) — ${(f.entrees/1000000).toFixed(1)}M — ${f.genre}`).join("\n");
     const tendances = MARKET_DATA.tendances.join("\n");
     const cannes24 = `Palme d'Or : ${MARKET_DATA.cannes2024.palmeOr.titre} (${MARKET_DATA.cannes2024.palmeOr.realisateur}), Grand Prix : ${MARKET_DATA.cannes2024.grandPrix.titre}, Prix du Jury : ${MARKET_DATA.cannes2024.prixJury.titre}`;
     const cesar25 = `Meilleur film : ${MARKET_DATA.cesar2025.meilleurFilm}, Meilleur premier film : ${MARKET_DATA.cesar2025.meilleurPremierFilm}`;
