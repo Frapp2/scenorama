@@ -375,8 +375,11 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
     const fullText = rawText;
 
     // Build market context from embedded data
-    const topFilms2024 = MARKET_DATA.boxOffice2024.slice(0, 10).map(f => `${f.titre} (${f.realisateur}) — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`).join("\n");
-    const topFilms2023 = MARKET_DATA.boxOffice2023.slice(0, 8).map(f => `${f.titre} (${f.realisateur}) — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`).join("\n");
+    const fmtFilm = (f) => `${f.titre}${f.realisateur ? ` (${f.realisateur})` : ""} — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`;
+    const topFilms2026 = MARKET_DATA.boxOffice2026.slice(0, 12).map(fmtFilm).join("\n");
+    const topFilms2025 = MARKET_DATA.boxOffice2025.slice(0, 12).map(fmtFilm).join("\n");
+    const topFilms2024 = MARKET_DATA.boxOffice2024.slice(0, 12).map(fmtFilm).join("\n");
+    const topFilms2023 = MARKET_DATA.boxOffice2023.slice(0, 8).map(fmtFilm).join("\n");
     const topHistorique = MARKET_DATA.topHistorique.slice(0, 15).map(f => `#${f.rang} ${f.titre} (${f.date}) — ${(f.entrees/1000000).toFixed(1)}M entrées — ${f.genre}`).join("\n");
     const tendances = MARKET_DATA.tendances.join("\n");
     const cannes24 = `Palme d'Or : ${MARKET_DATA.cannes2024.palmeOr.titre} (${MARKET_DATA.cannes2024.palmeOr.realisateur}), Grand Prix : ${MARKET_DATA.cannes2024.grandPrix.titre}, Prix du Jury : ${MARKET_DATA.cannes2024.prixJury.titre}`;
@@ -384,16 +387,22 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
 
     const prompt = `Tu es un lecteur professionnel de scénarios pour le cinéma et la télévision française. Tu travailles pour un comité de lecture de producteur. Analyse ce scénario et produis une fiche de lecture complète.
 
-CONTEXTE MARCHÉ (données réelles, utilise-les pour ancrer ton analyse) :
+CONTEXTE MARCHÉ (données réelles et à jour, utilise-les pour ancrer ton analyse) :
+
+Box-office France 2026 (en cours) :
+${topFilms2026}
+
+Box-office France 2025 :
+${topFilms2025}
+
+Box-office France 2024 :
+${topFilms2024}
+
+Box-office France 2023 :
+${topFilms2023}
 
 Top 15 historique box-office France (films français) :
 ${topHistorique}
-
-Box-office France 2024 — Top films français :
-${topFilms2024}
-
-Box-office France 2023 — Top films français :
-${topFilms2023}
 
 Cannes 2024 : ${cannes24}
 César 2025 : ${cesar25}
