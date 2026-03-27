@@ -1336,7 +1336,22 @@ export default function Scenorama() {
   const [showStats, setShowStats] = useState(false);
   const [showScenes, setShowScenes] = useState(false);
   const [showContrat, setShowContrat] = useState(false);
-  const [cachedAnalysis, setCachedAnalysis] = useState(null);
+  const [cachedAnalysis, _setCachedAnalysis] = useState(() => {
+    if (!fName) return null;
+    try {
+      const saved = localStorage.getItem(`scenorama-fiche-${fName}`);
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+  const setCachedAnalysis = useCallback((data) => {
+    _setCachedAnalysis(data);
+    if (fName) {
+      try {
+        if (data) localStorage.setItem(`scenorama-fiche-${fName}`, JSON.stringify(data));
+        else localStorage.removeItem(`scenorama-fiche-${fName}`);
+      } catch {}
+    }
+  }, [fName]);
   const [privacyMode, setPrivacyMode] = useState(false);
   const [annotations, setAnnotations] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
