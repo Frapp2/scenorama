@@ -347,6 +347,14 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
   const [error, setError] = useState(null);
   const hasRun = useRef(!!cachedAnalysis);
 
+  // Sync analysis state when cachedAnalysis prop changes (e.g. loaded from localStorage)
+  useEffect(() => {
+    if (cachedAnalysis) {
+      setAnalysis(cachedAnalysis);
+      hasRun.current = true;
+    }
+  }, [cachedAnalysis]);
+
   const section = (title) => (
     <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: "0.12em", color: th.accent, marginBottom: 8, marginTop: 22, textTransform: "uppercase" }}>{title}</div>
   );
@@ -1336,13 +1344,16 @@ export default function Scenorama() {
   const [showStats, setShowStats] = useState(false);
   const [showScenes, setShowScenes] = useState(false);
   const [showContrat, setShowContrat] = useState(false);
-  const [cachedAnalysis, _setCachedAnalysis] = useState(() => {
-    if (!fName) return null;
+  const [cachedAnalysis, _setCachedAnalysis] = useState(null);
+  // Reload cached fiche from localStorage whenever a file is opened
+  useEffect(() => {
+    if (!fName) { _setCachedAnalysis(null); return; }
     try {
       const saved = localStorage.getItem(`scenorama-fiche-${fName}`);
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
-  });
+      if (saved) _setCachedAnalysis(JSON.parse(saved));
+      else _setCachedAnalysis(null);
+    } catch { _setCachedAnalysis(null); }
+  }, [fName]);
   const setCachedAnalysis = useCallback((data) => {
     _setCachedAnalysis(data);
     if (fName) {
