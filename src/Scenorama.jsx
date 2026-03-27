@@ -758,20 +758,20 @@ ${fullText}`;
           <button onClick={() => {
             const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
             const title = stats.title || fName || "Sans titre";
-            const auteurs = analysis.auteurs || stats.author || "\u2014";
+            const auteurs = analysis.auteurs || stats.author || "—";
 
             const escH = (s) => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-            const nl2p = (s) => (s||"\u2014").split(/\n\n+/).map(p => `<p>${escH(p.trim())}</p>`).join("");
+            const nl2p = (s) => (s||"—").split(/\n\n+/).map(p => `<p>${escH(p.trim())}</p>`).join("");
 
             const alerts = [];
             if (stats.dialPct > 65) alerts.push(`Dialogue dominant (${stats.dialPct}%)`);
             if (stats.dialPct < 30) alerts.push(`Peu de dialogue (${stats.dialPct}%)`);
-            if (stats.charRanking.length > 15) alerts.push(`${stats.charRanking.length} personnages \u2014 casting lourd`);
-            if (stats.estMinutes > 130) alerts.push(`Dur\u00e9e longue (~${stats.estMinutes} min)`);
+            if (stats.charRanking.length > 15) alerts.push(`${stats.charRanking.length} personnages — casting lourd`);
+            if (stats.estMinutes > 130) alerts.push(`Durée longue (~${stats.estMinutes} min)`);
 
             const html = `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fiche de Lecture \u2014 ${escH(title)}</title>
+<title>Fiche de Lecture — ${escH(title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -845,30 +845,30 @@ body{font-family:'Inter',sans-serif;color:#1a1a1a;background:#f8f6f3;line-height
 <div class="meta-item"><span class="meta-label">Genre</span><span class="meta-value">${escH(analysis.genre)}</span></div>
 <div class="meta-item"><span class="meta-label">Ton</span><span class="meta-value">${escH(analysis.ton)}</span></div>
 <div class="meta-item"><span class="meta-label">Public</span><span class="meta-value">${escH(analysis.public)}</span></div>
-<div class="meta-item"><span class="meta-label">Dur\u00e9e</span><span class="meta-value">~${stats.estMinutes} min</span></div>
-<div class="meta-item"><span class="meta-label">Sc\u00e8nes</span><span class="meta-value">${stats.sceneCount} (${stats.intCount} INT / ${stats.extCount} EXT)</span></div>
+<div class="meta-item"><span class="meta-label">Durée</span><span class="meta-value">~${stats.estMinutes} min</span></div>
+<div class="meta-item"><span class="meta-label">Scènes</span><span class="meta-value">${stats.sceneCount} (${stats.intCount} INT / ${stats.extCount} EXT)</span></div>
 <div class="meta-item"><span class="meta-label">Jour / Nuit</span><span class="meta-value">${stats.jourCount} / ${stats.nuitCount}</span></div>
 <div class="meta-item"><span class="meta-label">Personnages</span><span class="meta-value">${stats.charCount}</span></div>
 <div class="meta-item"><span class="meta-label">Dialogue / Action</span><span class="meta-value">${stats.dialPct}% / ${100 - stats.dialPct}%</span></div>
 </div>
 
 ${analysis.synopsis ? `<div class="section"><div class="section-title">Synopsis</div>${nl2p(analysis.synopsis)}</div>` : ""}
-${analysis.resume ? `<div class="section"><div class="section-title">R\u00e9sum\u00e9</div>${nl2p(analysis.resume)}</div>` : ""}
+${analysis.resume ? `<div class="section"><div class="section-title">Résumé</div>${nl2p(analysis.resume)}</div>` : ""}
 ${analysis.avis ? `<div class="section"><div class="section-title">Avis de Lecture</div>${nl2p(analysis.avis)}</div>` : ""}
 
-${analysis.comparables && analysis.comparables.length > 0 ? `<div class="section"><div class="section-title">R\u00e9f\u00e9rences &amp; Comparables</div><div class="comparables">${analysis.comparables.map(c => `<span class="comparable-tag">${escH(c)}</span>`).join("")}</div></div>` : ""}
+${analysis.comparables && analysis.comparables.length > 0 ? `<div class="section"><div class="section-title">Références &amp; Comparables</div><div class="comparables">${analysis.comparables.map(c => `<span class="comparable-tag">${escH(c)}</span>`).join("")}</div></div>` : ""}
 
-${analysis.plateformes && analysis.plateformes.length > 0 ? `<div class="section"><div class="section-title">Plateformes Potentielles</div>${analysis.plateformes.map(p => `<div class="platform"><div class="platform-header"><span class="platform-name">${escH(p.nom)}</span><span class="platform-score">${p.score||0}%</span></div><div class="platform-bar"><div class="platform-fill" style="width:${p.score||0}%"></div></div>${p.raison ? `<div class="platform-detail">${escH(p.raison)}</div>` : ""}${p.ref ? `<div class="platform-detail" style="font-style:italic;margin-top:4px">R\u00e9f. : ${escH(p.ref)}</div>` : ""}</div>`).join("")}</div>` : ""}
+${analysis.plateformes && analysis.plateformes.length > 0 ? `<div class="section"><div class="section-title">Plateformes Potentielles</div>${analysis.plateformes.map(p => `<div class="platform"><div class="platform-header"><span class="platform-name">${escH(p.nom)}</span><span class="platform-score">${p.score||0}%</span></div><div class="platform-bar"><div class="platform-fill" style="width:${p.score||0}%"></div></div>${p.raison ? `<div class="platform-detail">${escH(p.raison)}</div>` : ""}${p.ref ? `<div class="platform-detail" style="font-style:italic;margin-top:4px">Réf. : ${escH(p.ref)}</div>` : ""}</div>`).join("")}</div>` : ""}
 
-${analysis.distribution ? `<div class="section"><div class="section-title">Strat\u00e9gie de Distribution</div>${nl2p(analysis.distribution)}</div>` : ""}
+${analysis.distribution ? `<div class="section"><div class="section-title">Stratégie de Distribution</div>${nl2p(analysis.distribution)}</div>` : ""}
 
-${analysis.opportunites && analysis.opportunites.length > 0 ? `<div class="section"><div class="section-title">Appels \u00e0 Projets &amp; Dispositifs</div>${analysis.opportunites.map(o => `<div class="opportunity"><div class="opportunity-name">${escH(o.nom)}</div>${o.organisme ? `<div class="opportunity-org">${escH(o.organisme)}</div>` : ""}${o.pertinence ? `<div class="opportunity-detail">${escH(o.pertinence)}</div>` : ""}${o.condition ? `<div class="opportunity-detail" style="font-style:italic">Condition : ${escH(o.condition)}</div>` : ""}</div>`).join("")}</div>` : ""}
+${analysis.opportunites && analysis.opportunites.length > 0 ? `<div class="section"><div class="section-title">Appels à Projets &amp; Dispositifs</div>${analysis.opportunites.map(o => `<div class="opportunity"><div class="opportunity-name">${escH(o.nom)}</div>${o.organisme ? `<div class="opportunity-org">${escH(o.organisme)}</div>` : ""}${o.pertinence ? `<div class="opportunity-detail">${escH(o.pertinence)}</div>` : ""}${o.condition ? `<div class="opportunity-detail" style="font-style:italic">Condition : ${escH(o.condition)}</div>` : ""}</div>`).join("")}</div>` : ""}
 
-${stats.charRanking.length > 0 ? `<div class="section"><div class="section-title">Temps de Parole</div>${stats.charRanking.slice(0,12).map(c => `<div class="char-row"><span class="char-name">${escH(c.name)}</span><div class="char-bar-bg"><div class="char-bar-fill" style="width:${c.pct}%"></div></div><span class="char-pct">${c.pct}% \u00b7 ${c.words} mots</span></div>`).join("")}</div>` : ""}
+${stats.charRanking.length > 0 ? `<div class="section"><div class="section-title">Temps de Parole</div>${stats.charRanking.slice(0,12).map(c => `<div class="char-row"><span class="char-name">${escH(c.name)}</span><div class="char-bar-bg"><div class="char-bar-fill" style="width:${c.pct}%"></div></div><span class="char-pct">${c.pct}% · ${c.words} mots</span></div>`).join("")}</div>` : ""}
 
-${alerts.length > 0 ? `<div class="section"><div class="section-title">Points d\u2019Attention</div>${alerts.map(a => `<div class="alert">\u26a0\ufe0f ${escH(a)}</div>`).join("")}</div>` : ""}
+${alerts.length > 0 ? `<div class="section"><div class="section-title">Points d’Attention</div>${alerts.map(a => `<div class="alert">⚠️ ${escH(a)}</div>`).join("")}</div>` : ""}
 
-<div class="footer">G\u00e9n\u00e9r\u00e9 par <strong>Sc\u00e9norama</strong> \u2014 scenorama.vercel.app</div>
+<div class="footer">Généré par <strong>Scénorama</strong> — scenorama.vercel.app</div>
 </div></body></html>`;
 
             const blob = new Blob([html], { type: "text/html;charset=utf-8" });
@@ -884,20 +884,20 @@ ${alerts.length > 0 ? `<div class="section"><div class="section-title">Points d\
             cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
             letterSpacing: "0.04em",
           }}>
-            Exporter la fiche compl\u00e8te
+            Exporter la fiche complète
           </button>
 
           {/* Export memo — HTML one-pager */}
           <button onClick={() => {
             const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
             const title = stats.title || fName || "Sans titre";
-            const auteurs = analysis.auteurs || stats.author || "\u2014";
+            const auteurs = analysis.auteurs || stats.author || "—";
 
             const escH = (s) => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
             const html = `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>M\u00e9mo \u2014 ${escH(title)}</title>
+<title>Mémo — ${escH(title)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -939,7 +939,7 @@ p{margin-bottom:8px;text-align:justify;color:#333;font-size:13px}
 </style></head><body><div class="page">
 
 <div class="header">
-<div class="badge">M\u00e9mo de Pr\u00e9sentation</div>
+<div class="badge">Mémo de Présentation</div>
 <div class="title">${escH(title)}</div>
 <div class="author">${escH(auteurs)}</div>
 <div class="date">${escH(date)}</div>
@@ -947,21 +947,21 @@ p{margin-bottom:8px;text-align:justify;color:#333;font-size:13px}
 
 <div class="quick-facts">
 <div class="fact"><div class="fact-val">~${stats.estMinutes}</div><div class="fact-label">minutes</div></div>
-<div class="fact"><div class="fact-val">${stats.sceneCount}</div><div class="fact-label">sc\u00e8nes</div></div>
+<div class="fact"><div class="fact-val">${stats.sceneCount}</div><div class="fact-label">scènes</div></div>
 <div class="fact"><div class="fact-val">${stats.charCount}</div><div class="fact-label">personnages</div></div>
-<div class="fact"><div class="fact-val">${escH(analysis.genre||"\u2014")}</div><div class="fact-label">genre</div></div>
-<div class="fact"><div class="fact-val">${escH(analysis.ton||"\u2014")}</div><div class="fact-label">ton</div></div>
+<div class="fact"><div class="fact-val">${escH(analysis.genre||"—")}</div><div class="fact-label">genre</div></div>
+<div class="fact"><div class="fact-val">${escH(analysis.ton||"—")}</div><div class="fact-label">ton</div></div>
 </div>
 
 <div class="body">
 <div class="col-left">
 <h3>Synopsis</h3>
-<p>${escH(analysis.synopsis||"\u2014")}</p>
+<p>${escH(analysis.synopsis||"—")}</p>
 
 <h3>Avis de Lecture</h3>
-<p>${escH(analysis.avis||"\u2014")}</p>
+<p>${escH(analysis.avis||"—")}</p>
 
-${analysis.comparables && analysis.comparables.length > 0 ? `<h3>R\u00e9f\u00e9rences</h3><div class="tag-list">${analysis.comparables.map(c => `<span class="tag">${escH(c)}</span>`).join("")}</div>` : ""}
+${analysis.comparables && analysis.comparables.length > 0 ? `<h3>Références</h3><div class="tag-list">${analysis.comparables.map(c => `<span class="tag">${escH(c)}</span>`).join("")}</div>` : ""}
 </div>
 
 <div class="col-right">
@@ -975,7 +975,7 @@ ${stats.charRanking.length > 0 ? `<h3>Temps de Parole</h3>${stats.charRanking.sl
 </div>
 </div>
 
-<div class="footer">G\u00e9n\u00e9r\u00e9 par <strong>Sc\u00e9norama</strong> \u2014 scenorama.vercel.app</div>
+<div class="footer">Généré par <strong>Scénorama</strong> — scenorama.vercel.app</div>
 </div></body></html>`;
 
             const blob = new Blob([html], { type: "text/html;charset=utf-8" });
@@ -991,10 +991,10 @@ ${stats.charRanking.length > 0 ? `<h3>Temps de Parole</h3>${stats.charRanking.sl
             cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
             letterSpacing: "0.04em",
           }}>
-            Exporter le m\u00e9mo (one-pager)
+            Exporter le mémo (one-pager)
           </button>
           <div style={{ fontSize: 10, color: th.hint, marginTop: 4, textAlign: "center" }}>
-            Fiche = document complet \u00b7 M\u00e9mo = one-pager pour diffuseur \u00b7 Imprimez en PDF via \u2318P
+            Fiche = document complet · Mémo = one-pager pour diffuseur · Imprimez en PDF via ⌘P
           </div>
         </div>
       )}
