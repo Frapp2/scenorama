@@ -754,92 +754,128 @@ ${fullText}`;
       {/* Export buttons */}
       {analysis && (
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${th.border}`, display: "flex", flexDirection: "column", gap: 8 }}>
-          {/* Export full fiche */}
+          {/* Export full fiche — HTML */}
           <button onClick={() => {
-            const date = new Date().toLocaleDateString("fr-FR");
+            const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
             const title = stats.title || fName || "Sans titre";
-            const sep = "═".repeat(56);
-            const thin = "─".repeat(56);
-            let f = "";
-            f += `${sep}\n`;
-            f += `    FICHE DE LECTURE\n`;
-            f += `${sep}\n\n`;
-            f += `    ${title.toUpperCase()}\n`;
-            f += `    ${date}\n`;
-            f += `${thin}\n\n`;
+            const auteurs = analysis.auteurs || stats.author || "\u2014";
 
-            f += `AUTEUR(S)      ${analysis.auteurs || stats.author || "—"}\n`;
-            f += `GENRE          ${analysis.genre || "—"}\n`;
-            f += `TON            ${analysis.ton || "—"}\n`;
-            f += `PUBLIC         ${analysis.public || "—"}\n`;
-            f += `DURÉE ESTIMÉE  ~${stats.estMinutes} min\n`;
-            f += `SCÈNES         ${stats.sceneCount} (${stats.intCount} INT / ${stats.extCount} EXT)\n`;
-            f += `JOUR / NUIT    ${stats.jourCount} / ${stats.nuitCount}\n`;
-            f += `PERSONNAGES    ${stats.charCount}\n`;
-            f += `MOTS           ${stats.totalWords.toLocaleString()} (dialogue ${stats.dialPct}% / action ${100 - stats.dialPct}%)\n\n`;
-
-            if (analysis.synopsis) { f += `${thin}\nSYNOPSIS\n${thin}\n\n${analysis.synopsis}\n\n`; }
-            if (analysis.resume) { f += `${thin}\nRÉSUMÉ\n${thin}\n\n${analysis.resume}\n\n`; }
-            if (analysis.avis) { f += `${thin}\nAVIS CRITIQUE\n${thin}\n\n${analysis.avis}\n\n`; }
-
-            if (analysis.comparables && analysis.comparables.length > 0) {
-              f += `${thin}\nRÉFÉRENCES COMPARABLES\n${thin}\n\n`;
-              analysis.comparables.forEach((c) => { f += `  • ${c}\n`; });
-              f += `\n`;
-            }
-
-            if (analysis.plateformes && analysis.plateformes.length > 0) {
-              f += `${thin}\nPLATEFORMES POTENTIELLES\n${thin}\n\n`;
-              analysis.plateformes.forEach((p) => {
-                const bar = "█".repeat(Math.round((p.score||0) / 10)) + "░".repeat(10 - Math.round((p.score||0) / 10));
-                f += `  ${(p.nom||"").padEnd(20)} ${bar} ${p.score||0}%\n`;
-                if (p.raison) f += `  ${p.raison}\n`;
-                if (p.ref) f += `  Réf. : ${p.ref}\n`;
-                f += `\n`;
-              });
-            }
-
-            if (analysis.distribution) { f += `${thin}\nSTRATÉGIE DE DISTRIBUTION\n${thin}\n\n${analysis.distribution}\n\n`; }
-
-            if (analysis.opportunites && analysis.opportunites.length > 0) {
-              f += `${thin}\nAPPELS À PROJETS & DISPOSITIFS\n${thin}\n\n`;
-              analysis.opportunites.forEach((o) => {
-                f += `  ${o.nom}${o.organisme ? ` (${o.organisme})` : ""}\n`;
-                if (o.pertinence) f += `  ${o.pertinence}\n`;
-                if (o.condition) f += `  Condition : ${o.condition}\n`;
-                f += `\n`;
-              });
-            }
-
-            if (stats.charRanking.length > 0) {
-              f += `${thin}\nTEMPS DE PAROLE\n${thin}\n\n`;
-              stats.charRanking.slice(0, 12).forEach((c) => {
-                const bar = "█".repeat(Math.round(c.pct / 5)) + "░".repeat(20 - Math.round(c.pct / 5));
-                f += `  ${c.name.padEnd(18)} ${bar} ${c.pct}% (${c.words} mots, ${c.lines} répl.)\n`;
-              });
-              f += `\n`;
-            }
+            const escH = (s) => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+            const nl2p = (s) => (s||"\u2014").split(/\n\n+/).map(p => `<p>${escH(p.trim())}</p>`).join("");
 
             const alerts = [];
             if (stats.dialPct > 65) alerts.push(`Dialogue dominant (${stats.dialPct}%)`);
             if (stats.dialPct < 30) alerts.push(`Peu de dialogue (${stats.dialPct}%)`);
-            if (stats.charRanking.length > 15) alerts.push(`${stats.charRanking.length} personnages — casting lourd`);
-            if (stats.estMinutes > 130) alerts.push(`Durée longue (~${stats.estMinutes} min)`);
-            if (alerts.length > 0) {
-              f += `${thin}\nPOINTS D'ATTENTION\n${thin}\n\n`;
-              alerts.forEach((a) => { f += `  ⚠ ${a}\n`; });
-              f += `\n`;
-            }
+            if (stats.charRanking.length > 15) alerts.push(`${stats.charRanking.length} personnages \u2014 casting lourd`);
+            if (stats.estMinutes > 130) alerts.push(`Dur\u00e9e longue (~${stats.estMinutes} min)`);
 
-            f += `${sep}\n`;
-            f += `  Généré par Scénorama — scenorama.vercel.app\n`;
-            f += `${sep}\n`;
+            const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fiche de Lecture \u2014 ${escH(title)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:A4;margin:20mm 25mm}
+body{font-family:'Inter',sans-serif;color:#1a1a1a;background:#f8f6f3;line-height:1.7;font-size:14px;-webkit-font-smoothing:antialiased}
+.page{max-width:800px;margin:0 auto;background:#fff;min-height:100vh}
+@media print{body{background:#fff}.page{box-shadow:none}}
+@media screen{.page{margin:32px auto;box-shadow:0 1px 40px rgba(0,0,0,.08);border-radius:2px}}
 
-            const blob = new Blob([f], { type: "text/plain;charset=utf-8" });
+/* Header */
+.header{padding:56px 56px 40px;border-bottom:3px solid #1a1a1a;position:relative}
+.header::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#c4956a,#8b6f47)}
+.doc-type{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#8b6f47;margin-bottom:20px}
+.title{font-family:'Playfair Display',Georgia,serif;font-size:32px;font-weight:700;line-height:1.2;margin-bottom:8px;color:#1a1a1a}
+.subtitle{font-size:15px;color:#555;font-weight:400}
+.date-line{font-size:12px;color:#999;margin-top:12px;letter-spacing:.04em}
+
+/* Metadata grid */
+.meta{padding:32px 56px;display:grid;grid-template-columns:1fr 1fr;gap:12px 40px;border-bottom:1px solid #e8e4df}
+.meta-item{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px dotted #ddd}
+.meta-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#8b6f47}
+.meta-value{font-size:14px;color:#1a1a1a;font-weight:500;text-align:right}
+
+/* Sections */
+.section{padding:32px 56px}
+.section+.section{border-top:1px solid #e8e4df}
+.section-title{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:600;color:#1a1a1a;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #c4956a;display:inline-block}
+.section p{margin-bottom:12px;text-align:justify;color:#333}
+
+/* Comparables */
+.comparables{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.comparable-tag{background:#f4efe9;border:1px solid #e0d6c8;border-radius:20px;padding:6px 16px;font-size:13px;color:#5a4a3a;font-weight:500}
+
+/* Platforms */
+.platform{margin-bottom:16px;padding:16px;background:#faf8f5;border-radius:8px;border-left:3px solid #c4956a}
+.platform-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.platform-name{font-weight:600;font-size:15px;color:#1a1a1a}
+.platform-score{font-size:24px;font-weight:700;color:#8b6f47}
+.platform-bar{height:6px;background:#e8e4df;border-radius:3px;overflow:hidden;margin-bottom:8px}
+.platform-fill{height:100%;background:linear-gradient(90deg,#c4956a,#8b6f47);border-radius:3px}
+.platform-detail{font-size:13px;color:#666;line-height:1.5}
+
+/* Opportunities */
+.opportunity{margin-bottom:14px;padding:14px 16px;background:#f9f7f4;border-radius:6px}
+.opportunity-name{font-weight:600;font-size:14px;color:#1a1a1a;margin-bottom:4px}
+.opportunity-org{font-size:12px;color:#8b6f47;font-weight:500;margin-bottom:4px}
+.opportunity-detail{font-size:13px;color:#666}
+
+/* Characters / parole */
+.char-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.char-name{width:120px;font-size:13px;font-weight:600;color:#333;flex-shrink:0}
+.char-bar-bg{flex:1;height:8px;background:#e8e4df;border-radius:4px;overflow:hidden}
+.char-bar-fill{height:100%;background:linear-gradient(90deg,#c4956a,#8b6f47);border-radius:4px}
+.char-pct{width:80px;font-size:12px;color:#888;text-align:right;flex-shrink:0}
+
+/* Alerts */
+.alert{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:#fff8f0;border-left:3px solid #e6a756;border-radius:0 6px 6px 0;margin-bottom:8px;font-size:13px;color:#7a5c28}
+
+/* Footer */
+.footer{padding:32px 56px;border-top:3px solid #1a1a1a;text-align:center;font-size:11px;color:#aaa;letter-spacing:.06em}
+.footer strong{color:#8b6f47}
+</style></head><body><div class="page">
+<div class="header">
+<div class="doc-type">Fiche de Lecture</div>
+<div class="title">${escH(title)}</div>
+<div class="subtitle">${escH(auteurs)}</div>
+<div class="date-line">${escH(date)}</div>
+</div>
+
+<div class="meta">
+<div class="meta-item"><span class="meta-label">Genre</span><span class="meta-value">${escH(analysis.genre)}</span></div>
+<div class="meta-item"><span class="meta-label">Ton</span><span class="meta-value">${escH(analysis.ton)}</span></div>
+<div class="meta-item"><span class="meta-label">Public</span><span class="meta-value">${escH(analysis.public)}</span></div>
+<div class="meta-item"><span class="meta-label">Dur\u00e9e</span><span class="meta-value">~${stats.estMinutes} min</span></div>
+<div class="meta-item"><span class="meta-label">Sc\u00e8nes</span><span class="meta-value">${stats.sceneCount} (${stats.intCount} INT / ${stats.extCount} EXT)</span></div>
+<div class="meta-item"><span class="meta-label">Jour / Nuit</span><span class="meta-value">${stats.jourCount} / ${stats.nuitCount}</span></div>
+<div class="meta-item"><span class="meta-label">Personnages</span><span class="meta-value">${stats.charCount}</span></div>
+<div class="meta-item"><span class="meta-label">Dialogue / Action</span><span class="meta-value">${stats.dialPct}% / ${100 - stats.dialPct}%</span></div>
+</div>
+
+${analysis.synopsis ? `<div class="section"><div class="section-title">Synopsis</div>${nl2p(analysis.synopsis)}</div>` : ""}
+${analysis.resume ? `<div class="section"><div class="section-title">R\u00e9sum\u00e9</div>${nl2p(analysis.resume)}</div>` : ""}
+${analysis.avis ? `<div class="section"><div class="section-title">Avis de Lecture</div>${nl2p(analysis.avis)}</div>` : ""}
+
+${analysis.comparables && analysis.comparables.length > 0 ? `<div class="section"><div class="section-title">R\u00e9f\u00e9rences &amp; Comparables</div><div class="comparables">${analysis.comparables.map(c => `<span class="comparable-tag">${escH(c)}</span>`).join("")}</div></div>` : ""}
+
+${analysis.plateformes && analysis.plateformes.length > 0 ? `<div class="section"><div class="section-title">Plateformes Potentielles</div>${analysis.plateformes.map(p => `<div class="platform"><div class="platform-header"><span class="platform-name">${escH(p.nom)}</span><span class="platform-score">${p.score||0}%</span></div><div class="platform-bar"><div class="platform-fill" style="width:${p.score||0}%"></div></div>${p.raison ? `<div class="platform-detail">${escH(p.raison)}</div>` : ""}${p.ref ? `<div class="platform-detail" style="font-style:italic;margin-top:4px">R\u00e9f. : ${escH(p.ref)}</div>` : ""}</div>`).join("")}</div>` : ""}
+
+${analysis.distribution ? `<div class="section"><div class="section-title">Strat\u00e9gie de Distribution</div>${nl2p(analysis.distribution)}</div>` : ""}
+
+${analysis.opportunites && analysis.opportunites.length > 0 ? `<div class="section"><div class="section-title">Appels \u00e0 Projets &amp; Dispositifs</div>${analysis.opportunites.map(o => `<div class="opportunity"><div class="opportunity-name">${escH(o.nom)}</div>${o.organisme ? `<div class="opportunity-org">${escH(o.organisme)}</div>` : ""}${o.pertinence ? `<div class="opportunity-detail">${escH(o.pertinence)}</div>` : ""}${o.condition ? `<div class="opportunity-detail" style="font-style:italic">Condition : ${escH(o.condition)}</div>` : ""}</div>`).join("")}</div>` : ""}
+
+${stats.charRanking.length > 0 ? `<div class="section"><div class="section-title">Temps de Parole</div>${stats.charRanking.slice(0,12).map(c => `<div class="char-row"><span class="char-name">${escH(c.name)}</span><div class="char-bar-bg"><div class="char-bar-fill" style="width:${c.pct}%"></div></div><span class="char-pct">${c.pct}% \u00b7 ${c.words} mots</span></div>`).join("")}</div>` : ""}
+
+${alerts.length > 0 ? `<div class="section"><div class="section-title">Points d\u2019Attention</div>${alerts.map(a => `<div class="alert">\u26a0\ufe0f ${escH(a)}</div>`).join("")}</div>` : ""}
+
+<div class="footer">G\u00e9n\u00e9r\u00e9 par <strong>Sc\u00e9norama</strong> \u2014 scenorama.vercel.app</div>
+</div></body></html>`;
+
+            const blob = new Blob([html], { type: "text/html;charset=utf-8" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `${(title).replace(/[^a-zA-ZÀ-ÿ0-9]/g, "_")}_fiche.txt`;
+            a.download = `${(title).replace(/[^a-zA-ZÀ-ÿ0-9]/g, "_")}_fiche.html`;
             a.click();
             URL.revokeObjectURL(url);
           }} style={{
@@ -848,107 +884,105 @@ ${fullText}`;
             cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
             letterSpacing: "0.04em",
           }}>
-            Exporter la fiche complète
+            Exporter la fiche compl\u00e8te
           </button>
 
-          {/* Export memo */}
+          {/* Export memo — HTML one-pager */}
           <button onClick={() => {
-            const date = new Date().toLocaleDateString("fr-FR");
+            const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
             const title = stats.title || fName || "Sans titre";
-            const auteurs = analysis.auteurs || stats.author || "—";
-            const sep = "═".repeat(56);
-            const thin = "─".repeat(56);
+            const auteurs = analysis.auteurs || stats.author || "\u2014";
 
-            let memo = "";
-            memo += `${sep}\n`;
-            memo += `    MÉMO DE PRÉSENTATION\n`;
-            memo += `${sep}\n\n`;
-            memo += `    ${title.toUpperCase()}\n\n`;
-            memo += `    ${auteurs}\n`;
-            memo += `    ${date}\n`;
-            memo += `${thin}\n\n`;
+            const escH = (s) => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
-            memo += `GENRE          ${analysis.genre || "—"}\n`;
-            memo += `TON            ${analysis.ton || "—"}\n`;
-            memo += `PUBLIC         ${analysis.public || "—"}\n`;
-            memo += `DURÉE ESTIMÉE  ~${stats.estMinutes} min\n`;
-            memo += `FORMAT         ${stats.sceneCount} scènes · ${stats.charCount} personnages\n\n`;
+            const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>M\u00e9mo \u2014 ${escH(title)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:A4;margin:18mm 22mm}
+body{font-family:'Inter',sans-serif;color:#1a1a1a;background:#f8f6f3;line-height:1.65;font-size:13px;-webkit-font-smoothing:antialiased}
+.page{max-width:800px;margin:0 auto;background:#fff;overflow:hidden}
+@media print{body{background:#fff}.page{box-shadow:none}}
+@media screen{.page{margin:32px auto;box-shadow:0 1px 40px rgba(0,0,0,.08);border-radius:2px}}
 
-            memo += `${thin}\n`;
-            memo += `SYNOPSIS\n`;
-            memo += `${thin}\n\n`;
-            memo += `${analysis.synopsis || "—"}\n\n`;
+.header{padding:44px 48px 28px;position:relative;border-bottom:2px solid #1a1a1a}
+.header::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#c4956a,#8b6f47)}
+.badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#fff;background:#8b6f47;padding:4px 12px;border-radius:3px;margin-bottom:16px}
+.title{font-family:'Playfair Display',Georgia,serif;font-size:26px;font-weight:700;line-height:1.2;margin-bottom:6px}
+.author{font-size:14px;color:#555}.date{font-size:11px;color:#aaa;margin-top:6px}
 
-            memo += `${thin}\n`;
-            memo += `NOTE D'INTENTION / AVIS DE LECTURE\n`;
-            memo += `${thin}\n\n`;
-            memo += `${analysis.avis || "—"}\n\n`;
+.quick-facts{display:grid;grid-template-columns:repeat(5,1fr);padding:16px 48px;background:#faf8f5;border-bottom:1px solid #e8e4df}
+.fact{text-align:center;padding:8px 0}
+.fact-val{font-size:18px;font-weight:700;color:#8b6f47}
+.fact-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-top:2px}
 
-            if (analysis.comparables && analysis.comparables.length > 0) {
-              memo += `${thin}\n`;
-              memo += `RÉFÉRENCES\n`;
-              memo += `${thin}\n\n`;
-              analysis.comparables.forEach((c) => { memo += `  • ${c}\n`; });
-              memo += `\n`;
-            }
+.body{padding:28px 48px;display:grid;grid-template-columns:1fr 1fr;gap:0 32px}
+.body.full-width{grid-template-columns:1fr}
+.col-left,.col-right{min-width:0}
 
-            if (analysis.plateformes && analysis.plateformes.length > 0) {
-              memo += `${thin}\n`;
-              memo += `DIFFUSION — PLATEFORMES POTENTIELLES\n`;
-              memo += `${thin}\n\n`;
-              analysis.plateformes.forEach((p) => {
-                const bar = "█".repeat(Math.round(p.score / 10)) + "░".repeat(10 - Math.round(p.score / 10));
-                memo += `  ${p.nom.padEnd(20)} ${bar} ${p.score}%\n`;
-                if (p.raison) memo += `  ${p.raison}\n`;
-                if (p.ref) memo += `  Réf. : ${p.ref}\n`;
-                memo += `\n`;
-              });
-            }
+h3{font-family:'Playfair Display',Georgia,serif;font-size:14px;font-weight:600;color:#8b6f47;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #e8e4df}
+h3:first-child{margin-top:0}
+p{margin-bottom:8px;text-align:justify;color:#333;font-size:13px}
+.tag-list{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 12px}
+.tag{background:#f4efe9;border:1px solid #e0d6c8;border-radius:14px;padding:3px 10px;font-size:11px;color:#5a4a3a;font-weight:500}
 
-            if (analysis.distribution) {
-              memo += `${thin}\n`;
-              memo += `STRATÉGIE DE DISTRIBUTION\n`;
-              memo += `${thin}\n\n`;
-              memo += `  ${analysis.distribution}\n\n`;
-            }
+.plat{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.plat-name{font-size:12px;font-weight:600;width:90px;flex-shrink:0;color:#333}
+.plat-bar-bg{flex:1;height:5px;background:#e8e4df;border-radius:3px;overflow:hidden}
+.plat-bar-fill{height:100%;background:linear-gradient(90deg,#c4956a,#8b6f47);border-radius:3px}
+.plat-score{width:36px;font-size:11px;font-weight:700;color:#8b6f47;text-align:right}
 
-            if (analysis.opportunites && analysis.opportunites.length > 0) {
-              memo += `${thin}\n`;
-              memo += `APPELS À PROJETS & DISPOSITIFS RECOMMANDÉS\n`;
-              memo += `${thin}\n\n`;
-              analysis.opportunites.forEach((o) => {
-                memo += `  ${o.nom}${o.organisme ? ` (${o.organisme})` : ""}\n`;
-                if (o.pertinence) memo += `  ${o.pertinence}\n`;
-                if (o.condition) memo += `  Condition : ${o.condition}\n`;
-                memo += `\n`;
-              });
-            }
+.footer{padding:20px 48px;border-top:2px solid #1a1a1a;text-align:center;font-size:10px;color:#aaa;letter-spacing:.06em}
+.footer strong{color:#8b6f47}
+</style></head><body><div class="page">
 
-            memo += `${thin}\n`;
-            memo += `DONNÉES TECHNIQUES\n`;
-            memo += `${thin}\n\n`;
-            memo += `  Scènes         ${stats.sceneCount} (${stats.intCount} INT / ${stats.extCount} EXT)\n`;
-            memo += `  Jour / Nuit    ${stats.jourCount} / ${stats.nuitCount}\n`;
-            memo += `  Mots           ${stats.totalWords.toLocaleString()} (dialogue ${stats.dialPct}% / action ${100 - stats.dialPct}%)\n`;
-            memo += `  Personnages    ${stats.charCount}\n\n`;
+<div class="header">
+<div class="badge">M\u00e9mo de Pr\u00e9sentation</div>
+<div class="title">${escH(title)}</div>
+<div class="author">${escH(auteurs)}</div>
+<div class="date">${escH(date)}</div>
+</div>
 
-            if (stats.charRanking.length > 0) {
-              memo += `  Temps de parole :\n`;
-              stats.charRanking.slice(0, 8).forEach((c) => {
-                memo += `    ${c.name.padEnd(18)} ${c.pct}% (${c.words} mots, ${c.lines} répl.)\n`;
-              });
-              memo += `\n`;
-            }
+<div class="quick-facts">
+<div class="fact"><div class="fact-val">~${stats.estMinutes}</div><div class="fact-label">minutes</div></div>
+<div class="fact"><div class="fact-val">${stats.sceneCount}</div><div class="fact-label">sc\u00e8nes</div></div>
+<div class="fact"><div class="fact-val">${stats.charCount}</div><div class="fact-label">personnages</div></div>
+<div class="fact"><div class="fact-val">${escH(analysis.genre||"\u2014")}</div><div class="fact-label">genre</div></div>
+<div class="fact"><div class="fact-val">${escH(analysis.ton||"\u2014")}</div><div class="fact-label">ton</div></div>
+</div>
 
-            memo += `${sep}\n`;
-            memo += `  Généré par Scénorama — scenorama.vercel.app\n`;
-            memo += `${sep}\n`;
+<div class="body">
+<div class="col-left">
+<h3>Synopsis</h3>
+<p>${escH(analysis.synopsis||"\u2014")}</p>
 
-            const blob = new Blob([memo], { type: "text/plain;charset=utf-8" });
+<h3>Avis de Lecture</h3>
+<p>${escH(analysis.avis||"\u2014")}</p>
+
+${analysis.comparables && analysis.comparables.length > 0 ? `<h3>R\u00e9f\u00e9rences</h3><div class="tag-list">${analysis.comparables.map(c => `<span class="tag">${escH(c)}</span>`).join("")}</div>` : ""}
+</div>
+
+<div class="col-right">
+${analysis.plateformes && analysis.plateformes.length > 0 ? `<h3>Plateformes</h3>${analysis.plateformes.map(p => `<div class="plat"><span class="plat-name">${escH(p.nom)}</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:${p.score||0}%"></div></div><span class="plat-score">${p.score||0}%</span></div>`).join("")}` : ""}
+
+${analysis.distribution ? `<h3>Distribution</h3><p>${escH(analysis.distribution)}</p>` : ""}
+
+${analysis.opportunites && analysis.opportunites.length > 0 ? `<h3>Dispositifs</h3>${analysis.opportunites.slice(0,4).map(o => `<p style="margin-bottom:4px"><strong>${escH(o.nom)}</strong>${o.organisme ? ` <span style="color:#8b6f47">(${escH(o.organisme)})</span>` : ""}</p>`).join("")}` : ""}
+
+${stats.charRanking.length > 0 ? `<h3>Temps de Parole</h3>${stats.charRanking.slice(0,6).map(c => `<div class="plat"><span class="plat-name">${escH(c.name)}</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:${c.pct}%"></div></div><span class="plat-score">${c.pct}%</span></div>`).join("")}` : ""}
+</div>
+</div>
+
+<div class="footer">G\u00e9n\u00e9r\u00e9 par <strong>Sc\u00e9norama</strong> \u2014 scenorama.vercel.app</div>
+</div></body></html>`;
+
+            const blob = new Blob([html], { type: "text/html;charset=utf-8" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `${(title).replace(/[^a-zA-ZÀ-ÿ0-9]/g, "_")}_memo.txt`;
+            a.download = `${(title).replace(/[^a-zA-ZÀ-ÿ0-9]/g, "_")}_memo.html`;
             a.click();
             URL.revokeObjectURL(url);
           }} style={{
@@ -957,10 +991,10 @@ ${fullText}`;
             cursor: "pointer", fontFamily: "'DM Sans',sans-serif",
             letterSpacing: "0.04em",
           }}>
-            Exporter le mémo (one-pager)
+            Exporter le m\u00e9mo (one-pager)
           </button>
           <div style={{ fontSize: 10, color: th.hint, marginTop: 4, textAlign: "center" }}>
-            Fiche = document interne complet · Mémo = one-pager pour diffuseur
+            Fiche = document complet \u00b7 M\u00e9mo = one-pager pour diffuseur \u00b7 Imprimez en PDF via \u2318P
           </div>
         </div>
       )}
