@@ -36,8 +36,11 @@ function parseScreenplay(text, pageBreaks) {
       return { t: "trans", text: tr, k: i, pg };
     if (/^\(.*\)$/.test(tr)) return { t: "paren", text: tr, k: i, pg };
     const isChar = /^[A-ZÉÈÊËÀÂÄÙÛÜÔÖÎÏÇŒÆ\s\-'\.]+(\s*\(.*\))?$/.test(tr);
+    const charBlacklist = /^(\.\.\.|\.+|SUITE|FIN|CONT'?D?|CONTINUED|GÉNÉRIQUE|TITRE|INTERTITRE|NOIR|FONDU|CUT|TRANSITION|V\.?\s*O\.?|NOTE|CARTON|INSERT|FLASH|TEXTE|ÉCRAN|SOUS[- ]?TITRE|SUPER|SILENCE|MUSIQUE|BRUIT|SON)$/;
     if (isChar && tr.length >= 2 && tr.length < 45 && tr === tr.toUpperCase() && !/^\d/.test(tr)) {
-      const w = tr.replace(/\(.*\)/, "").trim().split(/\s+/);
+      const cleaned = tr.replace(/\(.*\)/, "").trim();
+      if (charBlacklist.test(cleaned)) return { t: "action", text: tr, k: i, pg };
+      const w = cleaned.split(/\s+/);
       if (w.length <= 5 && isDialAfter(i))
         return { t: "char", text: tr, name: w.join(" "), k: i, pg };
     }
@@ -93,6 +96,7 @@ function calcStats(lines, totalPg) {
   });
 
   const charRanking = Object.entries(charWords)
+    .filter(([name, words]) => words >= 15 && name.length >= 2 && !/^\.+$/.test(name))
     .sort((a, b) => b[1] - a[1])
     .map(([name, words]) => ({
       name, words, lines: charLines[name] || 0,
@@ -389,104 +393,62 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
     const cannes24 = `Palme d'Or : ${MARKET_DATA.cannes2024.palmeOr.titre} (${MARKET_DATA.cannes2024.palmeOr.realisateur}), Grand Prix : ${MARKET_DATA.cannes2024.grandPrix.titre}, Prix du Jury : ${MARKET_DATA.cannes2024.prixJury.titre}`;
     const cesar25 = `Meilleur film : ${MARKET_DATA.cesar2025.meilleurFilm}, Meilleur premier film : ${MARKET_DATA.cesar2025.meilleurPremierFilm}`;
 
-    const prompt = `Tu es un lecteur professionnel de scénarios pour le cinéma et la télévision française. Tu travailles pour un comité de lecture de producteur. Analyse ce scénario et produis une fiche de lecture complète.
+    const prompt = `Tu es un lecteur professionnel de scénarios pour le cinéma et la télévision française. Tu travailles pour un comité de lecture d'un producteur établi. Ton analyse doit être au niveau d'une vraie note de lecture professionnelle — précise, honnête, utile pour la prise de décision.
 
-CONTEXTE MARCHÉ (données réelles et à jour, utilise-les pour ancrer ton analyse) :
-
-Box-office France 2026 (en cours) :
-${topFilms2026}
-
-Box-office France 2025 :
-${topFilms2025}
-
-Box-office France 2024 :
-${topFilms2024}
-
-Box-office France 2023 :
-${topFilms2023}
-
-Top 15 historique box-office France (films français) :
-${topHistorique}
-
+CONTEXTE MARCHÉ (données réelles, utilise-les pour les comparables) :
+Box-office France 2026 : ${topFilms2026}
+Box-office France 2025 : ${topFilms2025}
+Box-office France 2024 : ${topFilms2024}
+Box-office France 2023 : ${topFilms2023}
+Top historique France : ${topHistorique}
 Cannes 2024 : ${cannes24}
 César 2025 : ${cesar25}
-
-Tendances du marché :
-${tendances}
-
+Tendances : ${tendances}
 Fréquentation 2024 : ${MARKET_DATA.frequentation[2024].total/1000000}M entrées, part films français ${MARKET_DATA.frequentation[2024].partFR}%.
-
-UTILISE CES DONNÉES pour :
-- Comparer le scénario à des films récents RÉELS qui ont marché (ou pas) dans le même genre
-- Situer le potentiel du projet par rapport au box-office historique et récent
-- Évaluer le potentiel commercial en fonction des tendances actuelles
-- Recommander des plateformes en citant leurs succès récents réels
-- Identifier si le projet surfe sur une tendance porteuse ou va à contre-courant (et si c'est un atout ou un risque)
 
 RÈGLES :
 - Réponds UNIQUEMENT en JSON valide. Pas de markdown, pas de backticks, pas de texte avant ou après le JSON.
-- Le genre doit être précis et cohérent avec le contenu réel — ne te fie pas à un seul mot.
-- Pour les auteurs, identifie les vrais noms d'auteurs sur la page de garde. IGNORE les noms de sociétés de production, les numéros SIRET/TVA, les adresses, les noms d'agents ou de diffuseurs.
-- Les comparables doivent être des films ou séries réellement existants, de préférence français ou européens quand c'est pertinent.
-- L'avis doit être celui d'un vrai lecteur professionnel : honnête, précis, pas complaisant.
-
-POUR LES PLATEFORMES, base-toi sur leurs lignes éditoriales RÉELLES et leur catalogue existant :
-- Netflix France : grand public international, thrillers (Lupin, Braqueurs), comédies accessibles (Family Business), teen/YA, true crime. Évite l'art et essai pur, l'auteur trop clivant.
-- Canal+ : auteur premium, polar/thriller sombre (Baron Noir, Engrenages, Le Bureau des légendes), comédie noire, sujets politiques/sociétaux. Le plus ouvert au cinéma d'auteur ambitieux.
-- Arte (source : lignes éditoriales officielles ARTE France sept. 2023) :
-  FICTION : obsession éditoriale = originalité, diversité, créativité. "Des récits vigoureux dotés d'une âme." Pas de sujets mais des points de vue. Le policier/procédural/historique doit offrir une vraie innovation des codes. Miniséries 6-8 épisodes privilégiées (pas de récurrence de saisons). Tous formats dès 26min. Pas d'adaptations de séries étrangères sauf vraie réécriture. Vocation européenne forte.
-  COURTS/MOYENS MÉTRAGES : case Court-Circuit (samedi). Recherche de jeunes talents, points de vue personnels, univers originaux, formes audacieuses. Le court comme terrain d'expérimentation. Séries courtes humoristiques 30x2-3min (fiction ou animation) à 20h50.
-  DOCUMENTAIRE : émotion + pensée. Accessibilité sans simplification. Perspective européenne (pas franco-française). Cases : investigation (mardi 90min), histoire (grands récits, pas d'historiographie), géopolitique, société (histoires à dramaturgie charpentée, personnages, classes sociales peu représentées), La Lucarne (écritures excentriques, hors sentiers narratifs), grands formats (90min, œuvres ambitieuses).
-  NUMÉRIQUE : séries fiction courtes (15min max, 16/9 à 9/16), séries doc format souple, jeux vidéo d'auteur, dispositifs immersifs. Thématiques ancrées dans préoccupations du public, formes innovantes.
-  NE CORRESPOND PAS : grand public mainstream, procédural classique, policier sans innovation, sujets strictement nationaux/franco-français.
-- France Télévisions (France 2/3/5) : familial large, policiers (Capitaine Marleau), drames sociaux, comédies populaires, historique accessible. Public 40+. Émission Histoires courtes (courts métrages sur France 2). L'unité documentaire cherche aussi des écritures modernes pour les jeunes adultes (collection "Phénomènes !" : 52min, artistes/mouvements culturels marquants, 2e partie de soirée + france.tv). france.tv est la plateforme de rattrapage et de contenus originaux.
-- Amazon Prime Video : thriller/action (Citadel, Jack Ryan), comédies décalées, adaptations littéraires. Monte en gamme sur le français.
-- Disney+ / Star : familial, franchise, mais aussi thrillers via Star (Oussekine, Parallèles). S'ouvre au drama français adulte.
-- Apple TV+ : prestige, cinématographique, peu de volume mais haute qualité (Liaison). Sujets internationaux.
-- OCS / Max (HBO) : drama adulte, complexe, sombre (Hippocrate). Proche de la ligne HBO.
-- M6 / W9 : comédie grand public, thriller accessible, romcom. Public large et jeune.
-- TF1 / TF1+ : familial très large, polar procédural, comédie populaire, biopic. Le plus mainstream.
+- Le genre doit être précis et cohérent avec le contenu réel.
+- Pour les auteurs, identifie les vrais noms d'auteurs sur la page de garde. IGNORE sociétés de production, SIRET/TVA, adresses.
+- Les comparables doivent être des films/séries RÉELS avec leurs données box-office quand disponibles.
+- L'avis doit être celui d'un vrai lecteur professionnel : honnête, précis, pas complaisant, pas flatteur.
 
 JSON attendu :
 {
-  "auteurs": "Nom(s) du ou des scénaristes identifiés sur la page de garde (null si non identifiable)",
-  "genre": "Genre(s) précis (ex: Comédie dramatique, Thriller politique, Drame familial)",
-  "ton": "Ton en 2-3 mots (ex: Acide et mélancolique)",
-  "public": "Public cible (ex: Grand public, Art et essai, Public averti)",
+  "auteurs": "Nom(s) du ou des scénaristes (null si non identifiable)",
+  "genre": "Genre(s) précis (ex: Comédie noire, Thriller domestique)",
+  "ton": "Ton en 2-3 mots (ex: Acide et désenchanté)",
+  "public": "Public cible précis (ex: Grand public adulte 25-50 ans)",
   "synopsis": "Synopsis en 4-5 phrases : situation initiale, élément déclencheur, enjeux, tension principale. Pas de spoiler de fin.",
-  "resume": "Résumé factuel en 3-4 phrases de ce qui se passe dans les pages lues.",
-  "avis": "Avis critique en 5-6 phrases : qualité de l'écriture, force des dialogues, rythme narratif, originalité du sujet, profondeur des personnages, points faibles s'il y en a. Comme une vraie note de lecture de producteur.",
-  "comparables": ["Film/série 1 (année) — pourquoi", "Film/série 2 (année) — pourquoi", "Film/série 3 (année) — pourquoi"],
-  "plateformes": [
-    {"nom": "Nom de la plateforme", "score": 85, "raison": "Explication en 1-2 phrases", "ref": "Titre comparable dans leur catalogue (année)"}
+  "resume": "Résumé factuel complet en 4-6 phrases couvrant l'ensemble du récit.",
+  "avis": "Avis critique DÉTAILLÉ en 8-10 phrases. Qualité de l'écriture, force des dialogues, construction dramaturgique (structure en actes, points de bascule, climax), rythme narratif, originalité, profondeur des personnages, arcs narratifs. Points forts ET points faibles sans complaisance. C'est la section la plus importante — elle doit être substantielle et argumentée.",
+  "comparables_marche": [
+    {"titre": "Titre du film (année)", "entrees": "X.XM entrées France", "rapport": "En 2-3 phrases : POURQUOI ce film est comparable (genre, ton, structure, public), ce que ça nous apprend sur le potentiel commercial de ce scénario, et les différences clés. Utile pour un dossier de financement CNC/SOFICA."}
   ],
-  "opportunites": [
-    {"nom": "Nom du dispositif/concours", "organisme": "Organisme", "pertinence": "Pourquoi ce scénario correspond", "format": "Court/Long/Série/Doc/Animation", "condition": "Condition clé (ex: premier film, étudiant, etc.)"}
+  "vigilance_production": [
+    {"point": "Description concrète (ex: 22 scènes de nuit, 3 scènes avec animaux)", "impact": "Impact réel sur budget/planning (ex: surcoût équipe nuit ~15-20%, dresseur animalier)"}
   ],
-  "distribution": "1-2 phrases sur la stratégie de distribution recommandée : salle, plateforme, les deux, festival d'abord, etc."
+  "developpement": "Recommandations de développement CONCRÈTES en 6-8 phrases. Structurées comme des notes de script doctor : quels personnages renforcer, quels arcs manquent de résolution, où le rythme faiblit, quelles scènes couper ou réécrire, si l'acte 2 est trop long, si le climax arrive trop tôt/tard, etc. Sois précis (cite des numéros de scène ou pages si possible).",
+  "casting_profils": [
+    {"personnage": "Nom du personnage", "profil": "Description du profil recherché (âge, registre, type de jeu)", "reference": "2-3 noms de comédiens français qui correspondent au profil (pas une suggestion de casting, mais un repère pour le directeur de casting)"}
+  ]
 }
 
-POUR LES PLATEFORMES :
-- Classe les 4-5 plateformes les plus pertinentes par score de compatibilité (0-100).
-- Le score doit refléter la vraie probabilité que cette plateforme s'intéresse au projet.
-- Justifie TOUJOURS par un titre existant dans leur catalogue qui ressemble au scénario.
-- Si le scénario est clairement cinéma salle et pas plateforme, dis-le.
-- IMPORTANT pour Netflix : les soumissions ne sont acceptées que via un agent, producteur, avocat ou manager ayant déjà une relation avec Netflix. Mentionne-le OBLIGATOIREMENT si Netflix est recommandé. De plus, précise que Netflix fonctionne en production exécutive (pas déléguée) : la société de production exécute sous contrôle continu de Netflix, qui garde l'exclusivité totale des droits patrimoniaux. Netflix valide à chaque étape (casting, montage, post-prod) et peut imposer des modifications majeures. Un showrunner fort est indispensable pour préserver la vision artistique dans ce cadre.
+POUR LES COMPARABLES MARCHÉ :
+- Cite 3-4 films RÉELS, de préférence français, sortis dans les 5-10 dernières années.
+- Inclus TOUJOURS les entrées France quand tu les connais (utilise les données fournies).
+- Explique le rapport avec le scénario analysé de façon utile pour un producteur qui monte un dossier de financement.
+- Si le scénario ressemble à un film qui a échoué commercialement, dis-le aussi — c'est une info utile.
 
-POUR LES OPPORTUNITÉS, base-toi sur ces dispositifs réels (recommande uniquement ceux qui correspondent au format et au profil) :
-- GREC : concours série courte 5x2min (lieu unique, produit par GREC + France TV), ateliers court métrage (casting, mise en scène, montage), résidence scénario à Porto-Vecchio
-- TRANSPA + Maison du Film : concours "Mon Film dans un Camion" (premier long métrage, dotation technique 4 semaines)
-- La Fémis "Du court au long" : formation écriture traitement long métrage
-- Nef Animation / Première Page : court animation 3min pour jeunes diplômés écoles animation
-- Prix Daniel Sabatier : contenus originaux tous formats (fiction, doc, animation, court, mini-série, plateformes/réseaux sociaux), étudiants ou jeunes pros
-- Ardèche Images / École documentaire : formations documentaire (écriture, montage, création sonore)
-- Addoc : ateliers d'accompagnement documentaire (partage d'écriture, pitchs)
-- Mission Cinéma du Ministère de l'Intérieur : comité de lecture gratuit pour vraisemblance policière/judiciaire/action
-- CNC : aides à l'écriture, aide au développement, avance sur recettes (mentionner si pertinent)
-- SACD : dépôt, fonds d'aide à la création
-- France Télévisions "Phénomènes !" : collection doc culturel 8x52min, artistes ou mouvements culturels marquants peu traités en doc, écriture moderne, jeunes adultes + large public, 2e partie de soirée + france.tv. Soumission via société de production à appelprojets.culture@francetv.fr
+POUR LA VIGILANCE PRODUCTION :
+- Liste 4-6 points concrets tirés de ta lecture du scénario.
+- Chaque point doit avoir un impact réel et chiffrable (approximativement) sur le budget ou le planning.
+- Exemples : nombre de décors différents, scènes de nuit, figurants, animaux, véhicules spéciaux, effets spéciaux, scènes d'action, enfants acteurs, lieux publics nécessitant autorisations, reconstitution historique, etc.
 
-Ne recommande que les opportunités PERTINENTES pour ce scénario précis (format, genre, profil auteur).
+POUR LES PROFILS CASTING :
+- Liste les 3-5 personnages principaux uniquement.
+- Le profil doit être utile pour un directeur de casting : âge, registre (dramatique, comique, les deux), type physique si pertinent.
+- Les références d'acteurs servent de REPÈRE de registre, pas de suggestion définitive. Cite des comédiens français contemporains.
 
 Scénario à analyser :
 ${fullText}`;
@@ -713,65 +675,66 @@ ${fullText}`;
             </>
           )}
 
-          {analysis.plateformes && analysis.plateformes.length > 0 && (
+          {/* Comparables marché */}
+          {analysis.comparables_marche && analysis.comparables_marche.length > 0 && (
             <>
-              {section("Plateformes potentielles")}
+              {section("Comparables marché")}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {analysis.plateformes.map((p, i) => {
-                  const score = p.score || 0;
-                  const scoreColor = score >= 75 ? "#5a9a5a" : score >= 50 ? th.accent : th.muted;
-                  return (
-                    <div key={i} style={{
-                      padding: "10px 12px", background: th.surfaceAlt,
-                      borderRadius: 6, border: `1px solid ${th.border}`,
-                    }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: th.text }}>{p.nom || "—"}</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <div style={{
-                            width: 40, height: 5, background: th.statBarBg, borderRadius: 3, overflow: "hidden",
-                          }}>
-                            <div style={{ height: "100%", width: `${score}%`, background: scoreColor, borderRadius: 3 }} />
-                          </div>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: scoreColor, minWidth: 28 }}>{score}%</span>
-                        </div>
-                      </div>
-                      {p.raison && <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5, marginBottom: 3 }}>{p.raison}</div>}
-                      {p.ref && <div style={{ fontSize: 10, color: th.muted, fontStyle: "italic" }}>Réf. catalogue : {p.ref}</div>}
+                {analysis.comparables_marche.map((c, i) => (
+                  <div key={i} style={{
+                    padding: "10px 12px", background: th.surfaceAlt,
+                    borderRadius: 6, border: `1px solid ${th.border}`,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: th.text }}>{c.titre || "—"}</span>
+                      {c.entrees && <span style={{ fontSize: 10, fontWeight: 600, color: th.accent }}>{c.entrees}</span>}
                     </div>
-                  );
-                })}
+                    {c.rapport && <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5 }}>{c.rapport}</div>}
+                  </div>
+                ))}
               </div>
             </>
           )}
 
-          {/* Distribution strategy */}
-          {analysis.distribution && (
+          {/* Vigilance production */}
+          {analysis.vigilance_production && analysis.vigilance_production.length > 0 && (
             <>
-              {section("Stratégie de distribution")}
-              <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7, padding: "8px 12px", background: th.surfaceAlt, borderRadius: 6, border: `1px solid ${th.border}` }}>
-                {analysis.distribution}
-              </div>
-            </>
-          )}
-
-          {/* Opportunities */}
-          {analysis.opportunites && analysis.opportunites.length > 0 && (
-            <>
-              {section("Appels à projets & dispositifs")}
+              {section("Vigilance production")}
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {analysis.opportunites.map((o, i) => (
+                {analysis.vigilance_production.map((v, i) => (
                   <div key={i} style={{
                     padding: "9px 12px", background: th.surfaceAlt,
                     borderRadius: 6, border: `1px solid ${th.border}`,
                   }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: th.text }}>{o.nom}</span>
-                      {o.format && <span style={{ fontSize: 9, color: th.accent, fontWeight: 600, background: `${th.accent}12`, padding: "1px 8px", borderRadius: 10 }}>{o.format}</span>}
-                    </div>
-                    {o.organisme && <div style={{ fontSize: 10, color: th.muted, marginBottom: 3 }}>{o.organisme}</div>}
-                    <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5 }}>{o.pertinence}</div>
-                    {o.condition && <div style={{ fontSize: 10, color: th.accent, marginTop: 3, fontStyle: "italic" }}>Condition : {o.condition}</div>}
+                    <div style={{ fontSize: 12, fontWeight: 600, color: th.text, marginBottom: 3 }}>{v.point}</div>
+                    <div style={{ fontSize: 11, color: th.accent, fontStyle: "italic" }}>{v.impact}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Recommandations de développement */}
+          {analysis.developpement && (
+            <>
+              {section("Notes de développement")}
+              <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7, borderLeft: `2px solid ${th.accent}`, paddingLeft: 12 }}>{analysis.developpement}</div>
+            </>
+          )}
+
+          {/* Profils casting */}
+          {analysis.casting_profils && analysis.casting_profils.length > 0 && (
+            <>
+              {section("Profils casting")}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {analysis.casting_profils.map((c, i) => (
+                  <div key={i} style={{
+                    padding: "9px 12px", background: th.surfaceAlt,
+                    borderRadius: 6, border: `1px solid ${th.border}`,
+                  }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: th.text }}>{c.personnage}</span>
+                    <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5, marginTop: 3 }}>{c.profil}</div>
+                    {c.reference && <div style={{ fontSize: 10, color: th.muted, marginTop: 2, fontStyle: "italic" }}>Repères : {c.reference}</div>}
                   </div>
                 ))}
               </div>
@@ -786,7 +749,7 @@ ${fullText}`;
         <div key={c.name} style={{ marginBottom: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
             <span style={{ fontWeight: 600, color: th.text, fontSize: 11 }}>{c.name}</span>
-            <span style={{ color: th.muted, fontSize: 10 }}>{c.words} mots · {c.pct}%</span>
+            <span style={{ color: th.muted, fontSize: 10 }}>{c.lines} répl. · {c.pct}%</span>
           </div>
           <div style={{ height: 5, background: th.statBarBg, borderRadius: 3, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${c.pct}%`, background: th.statBar, borderRadius: 3 }} />
@@ -801,7 +764,7 @@ ${fullText}`;
           <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.7 }}>
             {stats.dialPct > 65 && <div>⚠ Dialogue dominant ({stats.dialPct}%)</div>}
             {stats.dialPct < 30 && <div>⚠ Peu de dialogue ({stats.dialPct}%)</div>}
-            {stats.charRanking.length > 15 && <div>⚠ {stats.charRanking.length} personnages — casting lourd</div>}
+            {stats.charRanking.length > 20 && <div>⚠ {stats.charRanking.length} rôles parlants — distribution importante</div>}
             {stats.estMinutes > 130 && <div>⚠ Durée longue (~{stats.estMinutes} min)</div>}
           </div>
         </>
@@ -822,7 +785,7 @@ ${fullText}`;
             const alerts = [];
             if (stats.dialPct > 65) alerts.push(`Dialogue dominant (${stats.dialPct}%)`);
             if (stats.dialPct < 30) alerts.push(`Peu de dialogue (${stats.dialPct}%)`);
-            if (stats.charRanking.length > 15) alerts.push(`${stats.charRanking.length} personnages — casting lourd`);
+            if (stats.charRanking.length > 20) alerts.push(`${stats.charRanking.length} rôles parlants — distribution importante`);
             if (stats.estMinutes > 130) alerts.push(`Durée longue (~${stats.estMinutes} min)`);
 
             const html = `<!DOCTYPE html>
@@ -914,13 +877,15 @@ ${analysis.avis ? `<div class="section"><div class="section-title">Avis de Lectu
 
 ${analysis.comparables && analysis.comparables.length > 0 ? `<div class="section"><div class="section-title">Références &amp; Comparables</div><div class="comparables">${analysis.comparables.map(c => `<span class="comparable-tag">${escH(c)}</span>`).join("")}</div></div>` : ""}
 
-${analysis.plateformes && analysis.plateformes.length > 0 ? `<div class="section"><div class="section-title">Plateformes Potentielles</div>${analysis.plateformes.map(p => `<div class="platform"><div class="platform-header"><span class="platform-name">${escH(p.nom)}</span><span class="platform-score">${p.score||0}%</span></div><div class="platform-bar"><div class="platform-fill" style="width:${p.score||0}%"></div></div>${p.raison ? `<div class="platform-detail">${escH(p.raison)}</div>` : ""}${p.ref ? `<div class="platform-detail" style="font-style:italic;margin-top:4px">Réf. : ${escH(p.ref)}</div>` : ""}</div>`).join("")}</div>` : ""}
+${analysis.comparables_marche && analysis.comparables_marche.length > 0 ? `<div class="section"><div class="section-title">Comparables Marché</div>${analysis.comparables_marche.map(c => `<div class="platform"><div class="platform-header"><span class="platform-name">${escH(c.titre)}</span><span style="font-size:13px;font-weight:600;color:#8b6f47">${escH(c.entrees||"")}</span></div><div class="platform-detail">${escH(c.rapport)}</div></div>`).join("")}</div>` : ""}
 
-${analysis.distribution ? `<div class="section"><div class="section-title">Stratégie de Distribution</div>${nl2p(analysis.distribution)}</div>` : ""}
+${analysis.vigilance_production && analysis.vigilance_production.length > 0 ? `<div class="section"><div class="section-title">Vigilance Production</div>${analysis.vigilance_production.map(v => `<div class="opportunity"><div class="opportunity-name">${escH(v.point)}</div><div class="opportunity-detail" style="font-style:italic;color:#8b6f47">${escH(v.impact)}</div></div>`).join("")}</div>` : ""}
 
-${analysis.opportunites && analysis.opportunites.length > 0 ? `<div class="section"><div class="section-title">Appels à Projets &amp; Dispositifs</div>${analysis.opportunites.map(o => `<div class="opportunity"><div class="opportunity-name">${escH(o.nom)}</div>${o.organisme ? `<div class="opportunity-org">${escH(o.organisme)}</div>` : ""}${o.pertinence ? `<div class="opportunity-detail">${escH(o.pertinence)}</div>` : ""}${o.condition ? `<div class="opportunity-detail" style="font-style:italic">Condition : ${escH(o.condition)}</div>` : ""}</div>`).join("")}</div>` : ""}
+${analysis.developpement ? `<div class="section"><div class="section-title">Notes de Développement</div>${nl2p(analysis.developpement)}</div>` : ""}
 
-${stats.charRanking.length > 0 ? `<div class="section"><div class="section-title">Temps de Parole</div>${stats.charRanking.slice(0,12).map(c => `<div class="char-row"><span class="char-name">${escH(c.name)}</span><div class="char-bar-bg"><div class="char-bar-fill" style="width:${c.pct}%"></div></div><span class="char-pct">${c.pct}% · ${c.words} mots</span></div>`).join("")}</div>` : ""}
+${analysis.casting_profils && analysis.casting_profils.length > 0 ? `<div class="section"><div class="section-title">Profils Casting</div>${analysis.casting_profils.map(c => `<div class="opportunity"><div class="opportunity-name">${escH(c.personnage)}</div><div class="opportunity-detail">${escH(c.profil)}</div>${c.reference ? `<div class="opportunity-detail" style="font-style:italic;margin-top:4px">Repères : ${escH(c.reference)}</div>` : ""}</div>`).join("")}</div>` : ""}
+
+${stats.charRanking.length > 0 ? `<div class="section"><div class="section-title">Temps de Parole</div>${stats.charRanking.slice(0,12).map(c => `<div class="char-row"><span class="char-name">${escH(c.name)}</span><div class="char-bar-bg"><div class="char-bar-fill" style="width:${c.pct}%"></div></div><span class="char-pct">${c.pct}% · ${c.lines} répl.</span></div>`).join("")}</div>` : ""}
 
 ${alerts.length > 0 ? `<div class="section"><div class="section-title">Points d’Attention</div>${alerts.map(a => `<div class="alert">⚠️ ${escH(a)}</div>`).join("")}</div>` : ""}
 
@@ -1021,11 +986,11 @@ ${analysis.comparables && analysis.comparables.length > 0 ? `<h3>Références</h
 </div>
 
 <div class="col-right">
-${analysis.plateformes && analysis.plateformes.length > 0 ? `<h3>Plateformes</h3>${analysis.plateformes.map(p => `<div class="plat"><span class="plat-name">${escH(p.nom)}</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:${p.score||0}%"></div></div><span class="plat-score">${p.score||0}%</span></div>`).join("")}` : ""}
+${analysis.comparables_marche && analysis.comparables_marche.length > 0 ? `<h3>Comparables</h3>${analysis.comparables_marche.map(c => `<div class="plat"><span class="plat-name">${escH(c.titre)}</span><span class="plat-score">${escH(c.entrees||"")}</span></div>`).join("")}` : ""}
 
-${analysis.distribution ? `<h3>Distribution</h3><p>${escH(analysis.distribution)}</p>` : ""}
+${analysis.developpement ? `<h3>Développement</h3><p>${escH(analysis.developpement).substring(0,300)}${analysis.developpement.length > 300 ? "..." : ""}</p>` : ""}
 
-${analysis.opportunites && analysis.opportunites.length > 0 ? `<h3>Dispositifs</h3>${analysis.opportunites.slice(0,4).map(o => `<p style="margin-bottom:4px"><strong>${escH(o.nom)}</strong>${o.organisme ? ` <span style="color:#8b6f47">(${escH(o.organisme)})</span>` : ""}</p>`).join("")}` : ""}
+${analysis.vigilance_production && analysis.vigilance_production.length > 0 ? `<h3>Vigilance Production</h3>${analysis.vigilance_production.slice(0,4).map(v => `<p style="margin-bottom:4px"><strong>${escH(v.point)}</strong></p>`).join("")}` : ""}
 
 ${stats.charRanking.length > 0 ? `<h3>Temps de Parole</h3>${stats.charRanking.slice(0,6).map(c => `<div class="plat"><span class="plat-name">${escH(c.name)}</span><div class="plat-bar-bg"><div class="plat-bar-fill" style="width:${c.pct}%"></div></div><span class="plat-score">${c.pct}%</span></div>`).join("")}` : ""}
 </div>
