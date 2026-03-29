@@ -27,7 +27,7 @@ function parseScreenplay(text, pageBreaks) {
     if (tr === "") return { t: "empty", text: "", k: i, pg };
     nonEmptyCount++;
     // Scene headers
-    const sceneRx = /^(\d+\s*[\.\-\)]?\s*)?(INT\s*[\.\-\/]|EXT\s*[\.\-\/]|INTÉRIEUR|EXTÉRIEUR|INT\s*\/\s*EXT)/i;
+    const sceneRx = /^(\d+\s*[\.\-\)]?\s*)?(INT\s*[\.\-\/\s]|EXT\s*[\.\-\/\s]|INTÉRIEUR|EXTÉRIEUR|INT\s*\/\s*EXT)/i;
     if (sceneRx.test(tr) && tr === tr.toUpperCase())
       return { t: "scene", text: tr, k: i, pg };
     if (/^\d+\s*(INT|EXT)/i.test(tr) && tr === tr.toUpperCase())
@@ -37,6 +37,8 @@ function parseScreenplay(text, pageBreaks) {
     if (/^\(.*\)$/.test(tr)) return { t: "paren", text: tr, k: i, pg };
     const isChar = /^[A-ZÉÈÊËÀÂÄÙÛÜÔÖÎÏÇŒÆ\s\-'\.]+(\s*\(.*\))?$/.test(tr);
     const charBlacklist = /^(\.\.\.|\.+|SUITE|FIN|CONT'?D?|CONTINUED|GÉNÉRIQUE|TITRE|INTERTITRE|NOIR|FONDU|CUT|TRANSITION|V\.?\s*O\.?|NOTE|CARTON|INSERT|FLASH|TEXTE|ÉCRAN|SOUS[- ]?TITRE|SUPER|SILENCE|MUSIQUE|BRUIT|SON)$/;
+    // Lines starting with INT/EXT are scene headings, never characters
+    if (/^(INT|EXT)\b/i.test(tr)) return { t: "scene", text: tr, k: i, pg };
     if (isChar && tr.length >= 2 && tr.length < 45 && tr === tr.toUpperCase() && !/^\d/.test(tr)) {
       const cleaned = tr.replace(/\(.*\)/, "").trim();
       if (charBlacklist.test(cleaned)) return { t: "action", text: tr, k: i, pg };
