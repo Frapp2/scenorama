@@ -569,6 +569,27 @@ ${fullText}`;
             condition: typeof o.condition === "string" ? o.condition : null,
           })) : [],
           distribution: typeof parsed.distribution === "string" ? parsed.distribution : null,
+          comparables_marche: Array.isArray(parsed.comparables_marche) ? parsed.comparables_marche.filter((c) =>
+            c && typeof c.titre === "string"
+          ).map((c) => ({
+            titre: c.titre,
+            entrees: typeof c.entrees === "string" ? c.entrees : "",
+            rapport: typeof c.rapport === "string" ? c.rapport : "",
+          })) : [],
+          vigilance_production: Array.isArray(parsed.vigilance_production) ? parsed.vigilance_production.filter((v) =>
+            v && typeof v.point === "string"
+          ).map((v) => ({
+            point: v.point,
+            impact: typeof v.impact === "string" ? v.impact : "",
+          })) : [],
+          developpement: typeof parsed.developpement === "string" ? parsed.developpement : null,
+          casting_profils: Array.isArray(parsed.casting_profils) ? parsed.casting_profils.filter((c) =>
+            c && typeof c.personnage === "string"
+          ).map((c) => ({
+            personnage: c.personnage,
+            profil: typeof c.profil === "string" ? c.profil : "",
+            reference: typeof c.reference === "string" ? c.reference : "",
+          })) : [],
         };
 
         setAnalysis(safe);
