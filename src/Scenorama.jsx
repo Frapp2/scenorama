@@ -384,7 +384,7 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
     // Anthropic rate limit on $5 tier: 30K input tokens/min ≈ 100K chars
     // Market context ≈ 5K tokens, prompt template ≈ 3K tokens → ~22K tokens left for screenplay
     // 22K tokens ≈ 88K chars. We cap at 85K to be safe.
-    const MAX_SCRIPT_CHARS = 85000;
+    const MAX_SCRIPT_CHARS = 80000;
     const isTruncated = rawText.length > MAX_SCRIPT_CHARS;
     const fullText = isTruncated ? rawText.slice(0, MAX_SCRIPT_CHARS) + "\n\n[... TEXTE TRONQUÉ — le scénario fait " + rawText.length + " caractères, seuls les " + MAX_SCRIPT_CHARS + " premiers sont analysés pour respecter les limites API. L'analyse porte sur environ " + Math.round(MAX_SCRIPT_CHARS / rawText.length * 100) + "% du scénario.]" : rawText;
 
@@ -454,17 +454,14 @@ POUR LA VIGILANCE PRODUCTION :
 POUR LES PROFILS CASTING :
 - Liste les 3-5 personnages principaux uniquement.
 - Le profil doit être utile pour un directeur de casting : âge, registre (dramatique, comique, les deux), type physique si pertinent.
-- IMPORTANT : Privilégie des suggestions parmi les comédiens et comédiennes de l'agence Time Art ci-dessous. Si aucun talent Time Art ne correspond, tu peux suggérer d'autres comédiens français.
+- IMPORTANT : Privilégie des suggestions parmi les comédiens et comédiennes des agences partenaires ci-dessous (Time Art, UBBA, Artmedia, CinéArt). Précise l'agence entre parenthèses. Si aucun talent ne correspond, tu peux suggérer d'autres comédiens français.
 - Pour chaque personnage, propose 2-3 noms avec une courte justification du matching.
 
-TALENTS TIME ART (comédiens) : ${talentsTimeArt.comediens.slice(0, 60).join(", ")}
-TALENTS TIME ART (comédiennes) : ${talentsTimeArt.comediennes.slice(0, 60).join(", ")}
-TALENTS UBBA (comédiens) : ${talentsUBBA.comediens.slice(0, 60).join(", ")}
-TALENTS UBBA (comédiennes) : ${talentsUBBA.comediennes.slice(0, 60).join(", ")}
-TALENTS ARTMEDIA (comédiens) : ${talentsArtmedia.comediens.join(", ")}
-TALENTS ARTMEDIA (comédiennes) : ${talentsArtmedia.comediennes.join(", ")}
-TALENTS CINÉART (comédiens) : ${talentsCineArt.comediens.slice(0, 60).join(", ")}
-TALENTS CINÉART (comédiennes) : ${talentsCineArt.comediennes.slice(0, 60).join(", ")}
+TALENTS AGENCES PARTENAIRES :
+Time Art : ${talentsTimeArt.comediens.slice(0, 25).join(", ")}, ${talentsTimeArt.comediennes.slice(0, 25).join(", ")}
+UBBA : ${talentsUBBA.comediens.slice(0, 25).join(", ")}, ${talentsUBBA.comediennes.slice(0, 25).join(", ")}
+Artmedia : ${talentsArtmedia.comediens.join(", ")}, ${talentsArtmedia.comediennes.join(", ")}
+CinéArt : ${talentsCineArt.comediens.slice(0, 25).join(", ")}, ${talentsCineArt.comediennes.slice(0, 25).join(", ")}
 
 Scénario à analyser :
 ${fullText}`;
