@@ -587,13 +587,13 @@ ${fullText}`;
     })();
   }, [rawText]);
 
-  // Auto-run on first open
+  // Auto-run on first open — but NOT if cache already loaded
   useEffect(() => {
-    if (!hasRun.current && rawText && rawText.length >= 200) {
+    if (!hasRun.current && !analysis && !cachedAnalysis && rawText && rawText.length >= 200) {
       hasRun.current = true;
       runAnalysis();
     }
-  }, [rawText, runAnalysis]);
+  }, [rawText, runAnalysis, analysis, cachedAnalysis]);
 
   return (
     <div style={{
