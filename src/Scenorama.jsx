@@ -783,9 +783,19 @@ ${fullText}`;
         </>
       )}
 
+      {/* Relaunch button */}
+      {analysis && !loading && (
+        <div style={{ marginTop: 16 }}>
+          <button onClick={() => { setError(null); setAnalysis(null); setCachedAnalysis(null); hasRun.current = false; runAnalysis(); }}
+            style={{ width: "100%", padding: "8px 14px", background: "transparent", border: `1px solid ${th.border}`, borderRadius: 6, color: th.soft, fontSize: 11, cursor: "pointer", transition: "0.2s" }}>
+            Relancer l'analyse
+          </button>
+        </div>
+      )}
+
       {/* Export buttons */}
       {analysis && (
-        <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${th.border}`, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ marginTop: 12, paddingTop: 16, borderTop: `1px solid ${th.border}`, display: "flex", flexDirection: "column", gap: 8 }}>
           {/* Export full fiche — HTML */}
           <button onClick={() => {
             const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
