@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, memo, useTransition 
 import { MARKET_DATA } from "./marketData.js";
 import talentsTimeArt from "./talentsTimeArt.js";
 import talentsUBBA from "./talentsUBBA.js";
+import talentsArtmedia from "./talentsArtmedia.js";
 
 // No sample text — start with empty state
 
@@ -459,6 +460,8 @@ TALENTS TIME ART (comédiens) : ${talentsTimeArt.comediens.slice(0, 60).join(", 
 TALENTS TIME ART (comédiennes) : ${talentsTimeArt.comediennes.slice(0, 60).join(", ")}
 TALENTS UBBA (comédiens) : ${talentsUBBA.comediens.slice(0, 60).join(", ")}
 TALENTS UBBA (comédiennes) : ${talentsUBBA.comediennes.slice(0, 60).join(", ")}
+TALENTS ARTMEDIA (comédiens) : ${talentsArtmedia.comediens.join(", ")}
+TALENTS ARTMEDIA (comédiennes) : ${talentsArtmedia.comediennes.join(", ")}
 
 Scénario à analyser :
 ${fullText}`;
