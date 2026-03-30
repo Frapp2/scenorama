@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo, useTransition } from "react";
 import { MARKET_DATA } from "./marketData.js";
+import talentsTimeArt from "./talentsTimeArt.js";
+import talentsUBBA from "./talentsUBBA.js";
 
 // No sample text — start with empty state
 
@@ -450,7 +452,13 @@ POUR LA VIGILANCE PRODUCTION :
 POUR LES PROFILS CASTING :
 - Liste les 3-5 personnages principaux uniquement.
 - Le profil doit être utile pour un directeur de casting : âge, registre (dramatique, comique, les deux), type physique si pertinent.
-- Les références d'acteurs servent de REPÈRE de registre, pas de suggestion définitive. Cite des comédiens français contemporains.
+- IMPORTANT : Privilégie des suggestions parmi les comédiens et comédiennes de l'agence Time Art ci-dessous. Si aucun talent Time Art ne correspond, tu peux suggérer d'autres comédiens français.
+- Pour chaque personnage, propose 2-3 noms avec une courte justification du matching.
+
+TALENTS TIME ART (comédiens) : ${talentsTimeArt.comediens.slice(0, 60).join(", ")}
+TALENTS TIME ART (comédiennes) : ${talentsTimeArt.comediennes.slice(0, 60).join(", ")}
+TALENTS UBBA (comédiens) : ${talentsUBBA.comediens.slice(0, 60).join(", ")}
+TALENTS UBBA (comédiennes) : ${talentsUBBA.comediennes.slice(0, 60).join(", ")}
 
 Scénario à analyser :
 ${fullText}`;
@@ -1204,11 +1212,150 @@ const ContratPanel = memo(function ContratPanel({ th, onClose, fName }) {
 
   const downloadContract = () => {
     if (!generated) return;
-    const blob = new Blob([generated], { type: "text/plain;charset=utf-8" });
+    const date = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    const escH = (s) => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const titre = escH(form.titre || "Projet");
+
+    const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contrat \u2014 ${titre}</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:A4;margin:25mm 30mm}
+body{font-family:'Inter',sans-serif;font-size:11pt;line-height:1.7;color:#1a1a1a;max-width:800px;margin:0 auto;padding:40px 50px}
+h1{font-family:'Playfair Display',serif;font-size:22pt;text-align:center;margin-bottom:4px;letter-spacing:1px;text-transform:uppercase}
+h2{font-family:'Playfair Display',serif;font-size:11pt;text-align:center;margin-bottom:24px;font-weight:400;letter-spacing:0.5px;color:#555}
+.meta{text-align:center;margin-bottom:32px;padding-bottom:20px;border-bottom:2px solid #1a1a1a}
+.meta span{display:block;font-size:10pt;color:#555;margin:2px 0}
+.meta .projet{font-size:14pt;font-weight:600;margin:8px 0}
+.parties{background:#f9f7f4;padding:20px 24px;border-radius:6px;margin-bottom:28px}
+.parties h3{font-family:'Playfair Display',serif;font-size:10pt;text-transform:uppercase;letter-spacing:1.5px;color:#8b7355;margin-bottom:10px}
+.parties p{margin-bottom:8px;font-size:10.5pt}
+.expose{font-style:italic;padding:16px 24px;border-left:3px solid #8b7355;margin:24px 0;background:#fdfcfa}
+.titre-section{font-family:'Playfair Display',serif;font-size:13pt;text-transform:uppercase;letter-spacing:2px;text-align:center;padding:12px 0;margin:28px 0 20px;border-top:1px solid #ccc;border-bottom:1px solid #ccc;color:#1a1a1a}
+.article{margin-bottom:20px}
+.article h4{font-family:'Inter',sans-serif;font-weight:600;font-size:10.5pt;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;color:#333}
+.article p,.article ul{font-size:10.5pt;margin-bottom:6px}
+.article ul{padding-left:24px}
+.article li{margin-bottom:4px}
+.montant{font-weight:600;font-size:11pt;color:#1a1a1a}
+.signatures{margin-top:48px;display:flex;justify-content:space-between;gap:40px;page-break-inside:avoid}
+.sig-block{flex:1;text-align:center;padding-top:60px;border-top:1px solid #999}
+.sig-block .label{font-size:9pt;text-transform:uppercase;letter-spacing:1px;color:#666}
+.footer{margin-top:40px;padding-top:16px;border-top:1px solid #ddd;text-align:center;font-size:8pt;color:#999}
+.footer em{display:block;margin-top:4px}
+@media print{body{padding:0;max-width:none}.parties{background:#f9f7f4 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+
+<h1>Contrat de commande</h1>
+<h2>et de cession de droits d\u2019auteur \u2014 sc\u00e9nariste, adaptateur et dialoguiste</h2>
+
+<div class="meta">
+<div class="projet">\u00ab\u00a0${titre}\u00a0\u00bb</div>
+<span>${escH({ long:"Long m\u00e9trage", court:"Court m\u00e9trage", serie:"S\u00e9rie", doc:"Documentaire" }[form.type] || "\u0152uvre audiovisuelle")}</span>
+<span>${date}</span>
+</div>
+
+<div class="parties">
+<h3>Entre les soussign\u00e9s</h3>
+<p>La soci\u00e9t\u00e9 <strong>${escH(form.producteur || "[NOM DE LA SOCI\u00c9T\u00c9]")}</strong>${form.siretProd ? `, SIRET ${escH(form.siretProd)}` : ""}${form.adresseProd ? `, dont le si\u00e8ge social est situ\u00e9 au ${escH(form.adresseProd)}` : ""}${form.gerantProd ? `, repr\u00e9sent\u00e9e par ${escH(form.gerantProd)}` : ""},<br>ci-apr\u00e8s d\u00e9nomm\u00e9e <strong>le Producteur</strong>.</p>
+<p style="text-align:center;margin:12px 0;font-size:10pt;color:#888">d\u2019une part,</p>
+<p style="text-align:center;margin:8px 0;font-weight:600;font-size:10pt">ET</p>
+<p><strong>${escH(form.auteur || "[NOM DE L'AUTEUR]")}</strong>${form.agentAuteur ? `, domicili\u00e9(e) chez son agent ${escH(form.agentAuteur)}` : ""},<br>ci-apr\u00e8s d\u00e9nomm\u00e9(e) <strong>l\u2019Auteur</strong>.</p>
+${form.coAuteur ? `<p>En collaboration avec <strong>${escH(form.coAuteur)}</strong>, ci-apr\u00e8s le Co-Auteur.</p>` : ""}
+${form.agentAuteur ? `<p>La soci\u00e9t\u00e9 <strong>${escH(form.agentAuteur)}</strong>, ci-apr\u00e8s d\u00e9nomm\u00e9e <strong>l\u2019Agent</strong>.</p>` : ""}
+<p style="text-align:center;margin-top:8px;font-size:10pt;color:#888">d\u2019autre part.</p>
+</div>
+
+<div class="expose">
+<p>Le Producteur envisage la production d\u2019un ${escH({ long:"long m\u00e9trage", court:"court m\u00e9trage", serie:"s\u00e9rie", doc:"documentaire" }[form.type] || "\u0153uvre audiovisuelle")} intitul\u00e9 provisoirement \u00ab\u00a0${titre}\u00a0\u00bb.</p>
+${form.adaptation ? `<p>Le sc\u00e9nario sera une adaptation de l\u2019\u0153uvre suivante : ${escH(form.oeuvreOrigine || "[A PR\u00c9CISER]")}.</p>` : `<p>Il s\u2019agit d\u2019un sc\u00e9nario original.</p>`}
+<p>Le pr\u00e9sent accord a pour objet de d\u00e9finir les modalit\u00e9s de collaboration et les conditions de cession des droits y aff\u00e9rents.</p>
+</div>
+
+<div class="titre-section">Titre I \u2014 Convention d\u2019\u00e9criture</div>
+
+<div class="article"><h4>Article 1 \u2014 \u00c9tapes d\u2019\u00e9criture</h4>
+<p>Le Producteur commande \u00e0 l\u2019Auteur l\u2019\u00e9criture du Sc\u00e9nario selon les \u00e9tapes suivantes :</p>
+<ul>
+<li>Remise d\u2019un traitement</li>
+<li>Remise de la premi\u00e8re version du sc\u00e9nario dialogu\u00e9 \u2014 le Producteur fera part de ses remarques sous 15 jours ouvr\u00e9s</li>
+${parseInt(form.etapes) >= 2 ? `<li>Remise de la deuxi\u00e8me version du sc\u00e9nario dialogu\u00e9 \u2014 le Producteur fera part de ses remarques sous 15 jours ouvr\u00e9s</li>` : ""}
+${parseInt(form.etapes) >= 3 ? `<li>Remise de la troisi\u00e8me et derni\u00e8re version du sc\u00e9nario dialogu\u00e9 (ci-apr\u00e8s le Sc\u00e9nario D\u00e9finitif)</li>` : ""}
+</ul></div>
+
+<div class="article"><h4>Article 2 \u2014 R\u00e9mun\u00e9ration</h4>
+<p>En r\u00e9mun\u00e9ration du travail et de la cession des droits, le Producteur versera :</p>
+<p class="montant">${(parseFloat(form.montant) || 0) + (parseFloat(form.montantAgent) || 0) > 0 ? ((parseFloat(form.montant) || 0) + (parseFloat(form.montantAgent) || 0)).toLocaleString("fr-FR") + " \u20ac HT" : "[MONTANT] \u20ac HT"}</p>
+<ul>
+<li>${parseFloat(form.montant) > 0 ? parseFloat(form.montant).toLocaleString("fr-FR") + " \u20ac" : "[MONTANT]"} pour l\u2019Auteur</li>
+${form.agentAuteur || parseFloat(form.montantAgent) > 0 ? `<li>${parseFloat(form.montantAgent) > 0 ? parseFloat(form.montantAgent).toLocaleString("fr-FR") + " \u20ac" : "[MONTANT]"} + TVA pour l\u2019Agent</li>` : ""}
+</ul></div>
+
+<div class="article"><h4>Article 3 \u2014 D\u00e9cision du Producteur</h4>
+<p>\u00c0 chaque \u00e9tape, le Producteur pourra :</p>
+<ul>
+<li>Poursuivre le projet avec la collaboration de l\u2019Auteur</li>
+<li>Renoncer \u00e0 la collaboration \u2014 l\u2019Auteur conservera les sommes vers\u00e9es \u00e0 titre de d\u00e9dit forfaitaire</li>
+</ul></div>
+
+<div class="titre-section">Titre II \u2014 Cession de droits</div>
+
+<div class="article"><h4>Article 4 \u2014 Objet de la cession</h4>
+<p>L\u2019Auteur c\u00e8de au Producteur, \u00e0 titre exclusif, pour le monde entier, les droits d\u2019exploitation du Film, comprenant les droits de reproduction, de repr\u00e9sentation, les droits secondaires et les droits d\u2019utilisation d\u00e9riv\u00e9e.</p></div>
+
+<div class="article"><h4>Article 5 \u2014 Droits c\u00e9d\u00e9s</h4>
+<ul>
+<li>Exploitation cin\u00e9matographique (salles)</li>
+<li>Exploitation par t\u00e9l\u00e9diffusion (TV, c\u00e2ble, satellite, internet)</li>
+<li>Exploitation vid\u00e9ographique (DVD, VOD, SVOD)</li>
+<li>Exploitation en ligne et num\u00e9rique</li>
+${form.droit_suite ? `<li>Droits de remake, prequel, sequel, spin-off</li>` : ""}
+</ul></div>
+
+<div class="article"><h4>Article 6 \u2014 Dur\u00e9e</h4>
+<p>La pr\u00e9sente cession est conclue pour une dur\u00e9e de <strong>${escH(form.duree)} ans</strong> \u00e0 compter de la premi\u00e8re repr\u00e9sentation commerciale du Film.</p></div>
+
+<div class="article"><h4>Article 7 \u2014 R\u00e9mun\u00e9rations proportionnelles</h4>
+<ul>
+<li>Exploitation cin\u00e9matographique : <strong>0,225%</strong></li>
+<li>Exploitation vid\u00e9ographique : <strong>0,135%</strong></li>
+<li>Exploitation TV : <strong>0,9%</strong></li>
+<li>Autres exploitations : <strong>0,9%</strong></li>
+</ul></div>
+
+<div class="article"><h4>Article 8 \u2014 Publicit\u00e9</h4>
+<p>L\u2019Auteur sera cr\u00e9dit\u00e9(e) : <strong>Sc\u00e9nario${form.coAuteur ? " et dialogues" : ""} de ${escH(form.auteur || "[NOM]")}${form.coAuteur ? " et " + escH(form.coAuteur) : ""}</strong></p>
+<p>dans des caract\u00e8res dont la taille ne pourra \u00eatre inf\u00e9rieure \u00e0 75% du nom du r\u00e9alisateur.</p></div>
+
+<div class="article"><h4>Article 9 \u2014 Reddition des comptes</h4>
+<p>Le Producteur \u00e9tablira des redditions de comptes semestriellement les deux premi\u00e8res ann\u00e9es, puis annuellement.</p></div>
+
+<div class="article"><h4>Article 10 \u2014 R\u00e9siliation</h4>
+<p>En cas de d\u00e9faut de paiement, apr\u00e8s mise en demeure par lettre recommand\u00e9e rest\u00e9e sans effet sous 15 jours, le pr\u00e9sent contrat sera r\u00e9sili\u00e9 de plein droit.</p></div>
+
+<div class="article"><h4>Article 11 \u2014 Litiges</h4>
+<p>En cas de litiges, attribution de juridiction est faite aux Tribunaux comp\u00e9tents de Paris.</p></div>
+
+<div class="signatures">
+<div class="sig-block"><div class="label">Le Producteur</div></div>
+<div class="sig-block"><div class="label">L\u2019Auteur</div></div>
+${form.agentAuteur ? `<div class="sig-block"><div class="label">L\u2019Agent</div></div>` : ""}
+</div>
+
+<div class="footer">
+Fait \u00e0 Paris, le ${date} \u2014 en ${form.agentAuteur ? "quatre" : "trois"} exemplaires originaux dont un pour le RPCA.
+<em>Document g\u00e9n\u00e9r\u00e9 par Sc\u00e9norama \u2014 scenorama.vercel.app \u2014 Ce document est un mod\u00e8le. Il ne constitue pas un avis juridique. Consultez un avocat sp\u00e9cialis\u00e9 avant signature.</em>
+</div>
+
+</body></html>`;
+
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Contrat_" + (form.titre || "projet").replace(/[^a-zA-Z0-9]/g, "_") + ".txt";
+    a.download = "Contrat_" + (form.titre || "projet").replace(/[^a-zA-Z0-9\u00e0-\u00fc]/g, "_") + ".html";
     a.click();
     URL.revokeObjectURL(url);
   };
