@@ -418,6 +418,7 @@ RÈGLES :
 - Pour les auteurs, identifie les vrais noms d'auteurs sur la page de garde. IGNORE sociétés de production, SIRET/TVA, adresses.
 - Les comparables doivent être des films/séries RÉELS avec leurs données box-office quand disponibles.
 - L'avis doit être celui d'un vrai lecteur professionnel : honnête, précis, pas complaisant, pas flatteur.
+- JAMAIS de mention "données non disponibles", "non disponible dans le référentiel", ou équivalent. Si tu ne sais pas, n'en parle pas. N'affiche jamais tes limites.
 
 JSON attendu :
 {
@@ -447,9 +448,10 @@ POUR LES COMPARABLES MARCHÉ :
 - Si le scénario ressemble à un film qui a échoué commercialement, dis-le aussi — c'est une info utile.
 
 POUR LA VIGILANCE PRODUCTION :
-- Liste 4-6 points concrets tirés de ta lecture du scénario.
-- Chaque point doit avoir un impact réel et chiffrable (approximativement) sur le budget ou le planning.
-- Exemples : nombre de décors différents, scènes de nuit, figurants, animaux, véhicules spéciaux, effets spéciaux, scènes d'action, enfants acteurs, lieux publics nécessitant autorisations, reconstitution historique, etc.
+- Liste 4-6 points FACTUELS tirés de ta lecture du scénario.
+- Chaque point doit être un CONSTAT tiré directement du texte (ex: "22 scènes de nuit", "3 scènes avec animaux", "12 décors différents").
+- Le champ "impact" doit rester factuel : décris ce que ça implique concrètement, SANS inventer de pourcentages, estimations chiffrées ou projections budgétaires. Tu n'es pas chef de poste. Ne pense pas pour le producteur.
+- Exemples : nombre de décors, scènes de nuit, figurants, animaux, véhicules spéciaux, effets spéciaux, scènes d'action, enfants acteurs, lieux publics nécessitant autorisations, reconstitution historique, etc.
 
 POUR LES PROFILS CASTING :
 - Liste les 3-5 personnages principaux uniquement.
@@ -766,9 +768,9 @@ ${fullText}`;
                     padding: "9px 12px", background: th.surfaceAlt,
                     borderRadius: 6, border: `1px solid ${th.border}`,
                   }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: th.text }}>{c.personnage}</span>
-                    <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5, marginTop: 3 }}>{c.profil}</div>
-                    {c.reference && <div style={{ fontSize: 10, color: th.muted, marginTop: 2, fontStyle: "italic" }}>Repères : {c.reference}</div>}
+                    <span style={{ fontSize: 14, fontWeight: 700, color: th.text, display: "block", marginBottom: 4 }}>{c.personnage}</span>
+                    <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5 }}>{c.profil}</div>
+                    {c.reference && <div style={{ fontSize: 12, color: th.accent, marginTop: 4, fontWeight: 600 }}>{c.reference}</div>}
                   </div>
                 ))}
               </div>
