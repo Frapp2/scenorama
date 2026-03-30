@@ -762,15 +762,38 @@ ${fullText}`;
           {analysis.casting_profils && analysis.casting_profils.length > 0 && (
             <>
               {section("Profils casting")}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {analysis.casting_profils.map((c, i) => (
                   <div key={i} style={{
-                    padding: "9px 12px", background: th.surfaceAlt,
-                    borderRadius: 6, border: `1px solid ${th.border}`,
+                    padding: "12px 14px", background: th.surfaceAlt,
+                    borderRadius: 8, border: `1px solid ${th.border}`,
                   }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: th.text, display: "block", marginBottom: 4 }}>{c.personnage}</span>
-                    <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5 }}>{c.profil}</div>
-                    {c.reference && <div style={{ fontSize: 12, color: th.accent, marginTop: 4, fontWeight: 600 }}>{c.reference}</div>}
+                    <span style={{ fontSize: 14, fontWeight: 700, color: th.text, display: "block", marginBottom: 6 }}>{c.personnage}</span>
+                    <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5, marginBottom: 6 }}>{c.profil}</div>
+                    {c.reference && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {c.reference.split(/,\s*/).map((name, j) => {
+                          const clean = name.replace(/\(.*?\)/g, "").trim();
+                          const agence = (name.match(/\(([^)]+)\)/) || [])[1] || "";
+                          const url = `https://www.allocine.fr/rechercher/?q=${encodeURIComponent(clean)}`;
+                          return (
+                            <a key={j} href={url} target="_blank" rel="noopener noreferrer"
+                              style={{
+                                display: "inline-block", padding: "4px 10px",
+                                background: th.accent + "15", border: `1px solid ${th.accent}40`,
+                                borderRadius: 16, fontSize: 12, fontWeight: 600,
+                                color: th.accent, textDecoration: "none", transition: "0.2s",
+                                cursor: "pointer",
+                              }}
+                              onMouseEnter={(e) => { e.target.style.background = th.accent + "30"; }}
+                              onMouseLeave={(e) => { e.target.style.background = th.accent + "15"; }}
+                            >
+                              {clean}{agence ? ` · ${agence}` : ""}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
