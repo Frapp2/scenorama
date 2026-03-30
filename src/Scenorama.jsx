@@ -3,6 +3,7 @@ import { MARKET_DATA } from "./marketData.js";
 import talentsTimeArt from "./talentsTimeArt.js";
 import talentsUBBA from "./talentsUBBA.js";
 import talentsArtmedia from "./talentsArtmedia.js";
+import talentsCineArt from "./talentsCineArt.js";
 
 // No sample text — start with empty state
 
@@ -462,6 +463,8 @@ TALENTS UBBA (comédiens) : ${talentsUBBA.comediens.slice(0, 60).join(", ")}
 TALENTS UBBA (comédiennes) : ${talentsUBBA.comediennes.slice(0, 60).join(", ")}
 TALENTS ARTMEDIA (comédiens) : ${talentsArtmedia.comediens.join(", ")}
 TALENTS ARTMEDIA (comédiennes) : ${talentsArtmedia.comediennes.join(", ")}
+TALENTS CINÉART (comédiens) : ${talentsCineArt.comediens.slice(0, 60).join(", ")}
+TALENTS CINÉART (comédiennes) : ${talentsCineArt.comediennes.slice(0, 60).join(", ")}
 
 Scénario à analyser :
 ${fullText}`;
