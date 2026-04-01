@@ -123,10 +123,13 @@ function calcStats(lines, totalPg) {
   const junkPattern = /TVA|SIRET|SARL|SAS\b|©|copyright|téléphone|tél\.|adresse|www\.|\.com|\.fr|ISBN|dépôt légal|imprim/i;
   
   let author = null;
-  // Pattern 1: "scénario de X", "écrit par X", "un film de X"
-  const authorMatch = firstLines.match(/(?:scénario\s+(?:de|original\s+de)|écrit\s+par|un\s+film\s+de|adaptation\s+de|scénario\s*:\s*)\s*([^\n,]+)/i);
-  if (authorMatch && !junkPattern.test(authorMatch[1])) {
-    author = authorMatch[1].trim().replace(/\s+/g, " ");
+  // Pattern 1: "scénario de X", "écrit par X", "un film de X" — match per line to avoid bleed
+  for (const singleLine of firstLinesArr) {
+    const authorMatch = singleLine.match(/(?:scénario\s+(?:de|original\s+de)|écrit\s+par|un\s+film\s+de|adaptation\s+de|scénario\s*:\s*)\s*(.+)/i);
+    if (authorMatch && !junkPattern.test(authorMatch[1]) && authorMatch[1].trim().length < 80) {
+      author = authorMatch[1].trim().replace(/\s+/g, " ");
+      break;
+    }
   }
   // Pattern 2: look for a standalone name line after the title (mixed case, 2-4 words, no junk)
   if (!author) {
@@ -384,7 +387,7 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
     // Anthropic rate limit on $5 tier: 30K input tokens/min ≈ 100K chars
     // Market context ≈ 5K tokens, prompt template ≈ 3K tokens → ~22K tokens left for screenplay
     // 22K tokens ≈ 88K chars. We cap at 85K to be safe.
-    const MAX_SCRIPT_CHARS = 80000;
+    const MAX_SCRIPT_CHARS = 50000;
     const isTruncated = rawText.length > MAX_SCRIPT_CHARS;
     const fullText = isTruncated ? rawText.slice(0, MAX_SCRIPT_CHARS) + "\n\n[... TEXTE TRONQUÉ — le scénario fait " + rawText.length + " caractères, seuls les " + MAX_SCRIPT_CHARS + " premiers sont analysés pour respecter les limites API. L'analyse porte sur environ " + Math.round(MAX_SCRIPT_CHARS / rawText.length * 100) + "% du scénario.]" : rawText;
 
