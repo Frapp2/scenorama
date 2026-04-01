@@ -1922,7 +1922,7 @@ export default function Scenorama() {
     curPageRef.current = 1; if (pageRef.current) pageRef.current.textContent = `p. 1 / ${totalPg}`;
     setPlaying(false);
     setElapsed(0);
-    setCachedAnalysis(null);
+    // Ne pas effacer le cache ici — le useEffect sur fName gère le rechargement depuis localStorage
   };
 
   // ── Drag-drop handler ──────────────────────────────────────────
