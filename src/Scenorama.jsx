@@ -322,7 +322,7 @@ const Line = memo(function Line({ l, fs, charFilter, pgIdx, totalPg, pgRefCb, an
       case "paren":
         return wrapHL(<p style={{ ...base, textAlign: "center", fontStyle: "italic", color: V("muted"), fontSize: fs * 0.82, marginBottom: 1 }}>{renderText(l.text)}</p>);
       case "dial":
-        return wrapHL(<p style={{ ...base, color: V("soft"), marginBottom: 1, paddingLeft: 72, paddingRight: 36 }}>{renderText(l.text)}</p>);
+        return wrapHL(<p style={{ ...base, color: V("soft"), marginBottom: 1, paddingLeft: 72, paddingRight: 36, whiteSpace: "pre-wrap" }}>{renderText(l.text)}</p>);
       case "trans":
         return <p style={{ ...base, textAlign: "center", color: V("trans"), fontWeight: 700, marginTop: 24, marginBottom: 24, fontSize: fs * 0.82, letterSpacing: "0.16em" }}>{renderText(l.text)}</p>;
       case "empty":
@@ -1704,7 +1704,27 @@ export default function Scenorama() {
   const scrollTick = useRef(0);
 
   const th = useMemo(() => TH[mode], [mode]);
-  const lines = useMemo(() => parseScreenplay(raw, pBreaks), [raw, pBreaks]);
+  const lines = useMemo(() => {
+    const parsed = parseScreenplay(raw, pBreaks);
+    // Merge consecutive lines of the same type into paragraphs for fluid reading
+    const merged = [];
+    for (let i = 0; i < parsed.length; i++) {
+      const l = parsed[i];
+      const prev = merged.length > 0 ? merged[merged.length - 1] : null;
+      // Merge consecutive action lines (not separated by empty lines)
+      if (l.t === "action" && prev && prev.t === "action" && !l.pg) {
+        prev.text = prev.text + " " + l.text;
+        continue;
+      }
+      // Merge consecutive dialogue lines from same character
+      if (l.t === "dial" && prev && prev.t === "dial" && prev.charOwner === l.charOwner && !l.pg) {
+        prev.text = prev.text + "\n" + l.text;
+        continue;
+      }
+      merged.push({ ...l });
+    }
+    return merged;
+  }, [raw, pBreaks]);
   const totalPg = useMemo(() => Math.max(1, lines.filter((l) => l.pg).length), [lines]);
   const chars = useMemo(() => {
     const s = new Set(); lines.forEach((l) => { if (l.t === "char" && l.name) s.add(l.name); }); return [...s].sort();
