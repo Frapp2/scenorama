@@ -436,7 +436,7 @@ JSON attendu :
     {"titre": "Titre du film (année)", "entrees": "X.XM entrées France", "rapport": "En 2-3 phrases : POURQUOI ce film est comparable (genre, ton, structure, public), ce que ça nous apprend sur le potentiel commercial de ce scénario, et les différences clés. Utile pour un dossier de financement CNC/SOFICA."}
   ],
   "vigilance_production": [
-    {"point": "Description concrète (ex: 22 scènes de nuit, 3 scènes avec animaux)", "impact": "Impact réel sur budget/planning (ex: surcoût équipe nuit ~15-20%, dresseur animalier)"}
+    {"point": "Constat factuel tiré du scénario (ex: 22 scènes de nuit, 3 scènes avec animaux, 12 décors distincts)"}
   ],
   "developpement": "Recommandations de développement CONCRÈTES en 6-8 phrases. Structurées comme des notes de script doctor : quels personnages renforcer, quels arcs manquent de résolution, où le rythme faiblit, quelles scènes couper ou réécrire, si l'acte 2 est trop long, si le climax arrive trop tôt/tard, etc. Sois précis (cite des numéros de scène ou pages si possible).",
   "casting_profils": [
@@ -451,10 +451,9 @@ POUR LES COMPARABLES MARCHÉ :
 - Si le scénario ressemble à un film qui a échoué commercialement, dis-le aussi — c'est une info utile.
 
 POUR LA VIGILANCE PRODUCTION :
-- Liste 4-6 points FACTUELS tirés de ta lecture du scénario.
-- Chaque point doit être un CONSTAT tiré directement du texte (ex: "22 scènes de nuit", "3 scènes avec animaux", "12 décors différents").
-- Le champ "impact" doit rester factuel : décris ce que ça implique concrètement, SANS inventer de pourcentages, estimations chiffrées ou projections budgétaires. Tu n'es pas chef de poste. Ne pense pas pour le producteur.
-- Exemples : nombre de décors, scènes de nuit, figurants, animaux, véhicules spéciaux, effets spéciaux, scènes d'action, enfants acteurs, lieux publics nécessitant autorisations, reconstitution historique, etc.
+- Liste 4-6 CONSTATS FACTUELS, rien d'autre. Pas de conseil, pas d'interprétation, pas de recommandation.
+- Chaque point = un fait vérifié dans le scénario. Exemple : "22 scènes de nuit", "3 scènes avec animaux", "12 décors distincts", "2 lieux de culte (mosquée, synagogue)".
+- PAS de champ "impact". Ne commente pas ce que ça implique. Ne pense pas pour le producteur. Il sait lire.
 
 POUR LES PROFILS CASTING :
 - Liste les 3-5 personnages principaux uniquement.
@@ -749,8 +748,7 @@ ${fullText}`;
                     padding: "9px 12px", background: th.surfaceAlt,
                     borderRadius: 6, border: `1px solid ${th.border}`,
                   }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: th.text, marginBottom: 3 }}>{v.point}</div>
-                    <div style={{ fontSize: 11, color: th.accent, fontStyle: "italic" }}>{v.impact}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: th.text }}>{v.point}</div>
                   </div>
                 ))}
               </div>
