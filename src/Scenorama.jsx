@@ -360,6 +360,7 @@ const FichePanel = memo(function FichePanel({ stats, th, onClose, fName, rawText
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const hasRun = useRef(!!cachedAnalysis);
+  const [ficheTab, setFicheTab] = useState("analyse");
 
   // Sync analysis state when cachedAnalysis prop changes (e.g. loaded from localStorage)
   useEffect(() => {
@@ -441,7 +442,8 @@ JSON attendu :
   "developpement": "Recommandations de développement CONCRÈTES en 6-8 phrases. Structurées comme des notes de script doctor : quels personnages renforcer, quels arcs manquent de résolution, où le rythme faiblit, quelles scènes couper ou réécrire, si l'acte 2 est trop long, si le climax arrive trop tôt/tard, etc. Sois précis (cite des numéros de scène ou pages si possible).",
   "casting_profils": [
     {"personnage": "Nom du personnage", "profil": "Description du profil recherché (âge, registre, type de jeu)", "suggestions": [{"nom": "Prénom Nom", "agence": "Nom agence si connue", "raison": "Pourquoi ce comédien colle au rôle (1 phrase courte)"}]}
-  ]
+  ],
+  "positionnement_budgetaire": "Positionnement budgétaire du scénario basé sur des éléments objectifs : nombre de décors distincts, ratio INT/EXT, scènes de nuit, nombre de personnages, durée estimée, scènes techniquement lourdes. Donne une fourchette budgétaire réaliste pour le marché français (ex: 4-7M€) en citant les facteurs aggravants et atténuants. NE donne PAS un chiffre unique — donne une fourchette avec justification factuelle. Formule ça comme : 'Ce scénario se positionne dans la fourchette X — comparable structurellement à des films budgétés entre XM€ et YM€. Facteurs aggravants : ... Facteurs atténuants : ...'"
 }
 
 POUR LES COMPARABLES MARCHÉ :
@@ -598,6 +600,7 @@ ${fullText}`;
               raison: s.raison || "",
             })) : [],
           })) : [],
+          positionnement_budgetaire: typeof parsed.positionnement_budgetaire === "string" ? parsed.positionnement_budgetaire : null,
         };
 
         setAnalysis(safe);
@@ -667,144 +670,205 @@ ${fullText}`;
         </div>
       )}
 
+      {/* Tabs navigation */}
+      {analysis && !loading && (
+        <div style={{ display: "flex", gap: 0, marginTop: 16, marginBottom: 16, borderBottom: `1px solid ${th.border}` }}>
+          {[
+            { id: "analyse", label: "Analyse" },
+            { id: "casting", label: "Casting" },
+            { id: "marche", label: "Marché" },
+            { id: "production", label: "Production" },
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => setFicheTab(tab.id)} style={{
+              flex: 1, padding: "8px 6px", background: "transparent", border: "none",
+              borderBottom: ficheTab === tab.id ? `2px solid ${th.accent}` : "2px solid transparent",
+              color: ficheTab === tab.id ? th.accent : th.muted, fontSize: 11, fontWeight: 600,
+              cursor: "pointer", fontFamily: fm, letterSpacing: "0.04em", transition: "0.2s",
+            }}>{tab.label}</button>
+          ))}
+        </div>
+      )}
+
       {analysis && (
         <>
-          {analysis.auteurs && (
+          {/* ─── TAB: ANALYSE ─── */}
+          {ficheTab === "analyse" && (
             <>
-              {section("Auteur(s)")}
-              <div style={{ fontSize: 12, color: th.text, fontWeight: 600 }}>{analysis.auteurs}</div>
+              {analysis.auteurs && (
+                <>
+                  {section("Auteur(s)")}
+                  <div style={{ fontSize: 12, color: th.text, fontWeight: 600 }}>{analysis.auteurs}</div>
+                </>
+              )}
+
+              {section("Genre")}
+              <div style={{ fontSize: 13, color: th.text, fontWeight: 600 }}>{analysis.genre || "—"}</div>
+              {analysis.ton && <div style={{ fontSize: 11, color: th.muted, marginTop: 3 }}>Ton : {analysis.ton}</div>}
+              {analysis.public && <div style={{ fontSize: 11, color: th.muted, marginTop: 2 }}>Public : {analysis.public}</div>}
+
+              {analysis.synopsis && (
+                <>
+                  {section("Synopsis")}
+                  <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7 }}>{analysis.synopsis}</div>
+                </>
+              )}
+
+              {analysis.resume && (
+                <>
+                  {section("Résumé")}
+                  <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7 }}>{analysis.resume}</div>
+                </>
+              )}
+
+              {analysis.avis && (
+                <>
+                  {section("Avis critique")}
+                  <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7, borderLeft: `2px solid ${th.accent}`, paddingLeft: 12, fontStyle: "italic" }}>{analysis.avis}</div>
+                </>
+              )}
+
+              {analysis.developpement && (
+                <>
+                  {section("Notes de développement")}
+                  <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7, borderLeft: `2px solid ${th.accent}`, paddingLeft: 12 }}>{analysis.developpement}</div>
+                </>
+              )}
             </>
           )}
 
-          {section("Genre")}
-          <div style={{ fontSize: 13, color: th.text, fontWeight: 600 }}>{analysis.genre || "—"}</div>
-          {analysis.ton && <div style={{ fontSize: 11, color: th.muted, marginTop: 3 }}>Ton : {analysis.ton}</div>}
-          {analysis.public && <div style={{ fontSize: 11, color: th.muted, marginTop: 2 }}>Public : {analysis.public}</div>}
-
-          {analysis.synopsis && (
+          {/* ─── TAB: CASTING ─── */}
+          {ficheTab === "casting" && (
             <>
-              {section("Synopsis")}
-              <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7 }}>{analysis.synopsis}</div>
-            </>
-          )}
-
-          {analysis.resume && (
-            <>
-              {section("Résumé")}
-              <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7 }}>{analysis.resume}</div>
-            </>
-          )}
-
-          {analysis.avis && (
-            <>
-              {section("Avis critique")}
-              <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7, borderLeft: `2px solid ${th.accent}`, paddingLeft: 12, fontStyle: "italic" }}>{analysis.avis}</div>
-            </>
-          )}
-
-          {analysis.comparables && analysis.comparables.length > 0 && (
-            <>
-              {section("Références comparables")}
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {analysis.comparables.map((c, i) => (
-                  <div key={i} style={{
-                    padding: "7px 12px", background: th.surfaceAlt,
-                    borderRadius: 5, border: `1px solid ${th.border}`,
-                    fontSize: 11, color: th.text, fontWeight: 500,
-                  }}>{c}</div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Comparables marché */}
-          {analysis.comparables_marche && analysis.comparables_marche.length > 0 && (
-            <>
-              {section("Comparables marché")}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {analysis.comparables_marche.map((c, i) => (
-                  <div key={i} style={{
-                    padding: "10px 12px", background: th.surfaceAlt,
-                    borderRadius: 6, border: `1px solid ${th.border}`,
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: th.text }}>{c.titre || "—"}</span>
-                      {c.entrees && <span style={{ fontSize: 10, fontWeight: 600, color: th.accent }}>{c.entrees}</span>}
+              {analysis.casting_profils && analysis.casting_profils.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {analysis.casting_profils.map((c, i) => (
+                    <div key={i} style={{
+                      padding: "14px 16px", background: th.surfaceAlt,
+                      borderRadius: 8, border: `1px solid ${th.border}`,
+                    }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: th.text, display: "block", marginBottom: 6 }}>{c.personnage}</span>
+                      <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5, marginBottom: 10 }}>{c.profil}</div>
+                      {c.suggestions && c.suggestions.length > 0 && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {c.suggestions.map((s, j) => (
+                            <div key={j} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <a href={`https://www.allocine.fr/rechercher/?q=${encodeURIComponent(s.nom)}`}
+                                target="_blank" rel="noopener noreferrer"
+                                style={{
+                                  display: "inline-block", padding: "4px 12px",
+                                  background: th.accent + "15", border: `1px solid ${th.accent}40`,
+                                  borderRadius: 20, fontSize: 13, fontWeight: 700,
+                                  color: th.accent, textDecoration: "none", transition: "0.2s",
+                                  cursor: "pointer", whiteSpace: "nowrap",
+                                }}
+                                onMouseEnter={(e) => { e.target.style.background = th.accent + "30"; }}
+                                onMouseLeave={(e) => { e.target.style.background = th.accent + "15"; }}
+                              >
+                                {s.nom}
+                              </a>
+                              {s.agence && <span style={{ fontSize: 10, color: th.muted, fontWeight: 500 }}>{s.agence}</span>}
+                              <span style={{ fontSize: 11, color: th.soft, flex: 1 }}>{s.raison}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {c.rapport && <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5 }}>{c.rapport}</div>}
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: th.muted, textAlign: "center", marginTop: 24 }}>Aucune suggestion de casting disponible</div>
+              )}
+            </>
+          )}
+
+          {/* ─── TAB: MARCHÉ ─── */}
+          {ficheTab === "marche" && (
+            <>
+              {/* Comparables with visual cards and entry badges */}
+              {analysis.comparables_marche && analysis.comparables_marche.length > 0 && (
+                <>
+                  {section("Comparables marché")}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {analysis.comparables_marche.map((c, i) => {
+                      const num = parseFloat((c.entrees || "").replace(/[^0-9.,]/g, "").replace(",", "."));
+                      const badgeColor = num >= 5 ? "#4a8c3f" : num >= 1 ? "#c48a2a" : "#888";
+                      return (
+                        <div key={i} style={{
+                          padding: "12px 14px", background: th.surfaceAlt,
+                          borderRadius: 8, border: `1px solid ${th.border}`,
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: th.text }}>{c.titre || "—"}</span>
+                            {c.entrees && <span style={{
+                              fontSize: 11, fontWeight: 700, color: "#fff", background: badgeColor,
+                              padding: "2px 10px", borderRadius: 12, whiteSpace: "nowrap",
+                            }}>{c.entrees}</span>}
+                          </div>
+                          {c.rapport && <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.6 }}>{c.rapport}</div>}
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </>
+              )}
 
-          {/* Vigilance production */}
-          {analysis.vigilance_production && analysis.vigilance_production.length > 0 && (
-            <>
-              {section("Vigilance production")}
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {analysis.vigilance_production.map((v, i) => (
-                  <div key={i} style={{
-                    padding: "9px 12px", background: th.surfaceAlt,
-                    borderRadius: 6, border: `1px solid ${th.border}`,
-                  }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: th.text }}>{v.point}</div>
+              {analysis.comparables && analysis.comparables.length > 0 && (
+                <>
+                  {section("Références")}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {analysis.comparables.map((c, i) => (
+                      <span key={i} style={{
+                        padding: "4px 12px", background: th.surfaceAlt, border: `1px solid ${th.border}`,
+                        borderRadius: 16, fontSize: 11, color: th.text, fontWeight: 500,
+                      }}>{c}</span>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </>
+              )}
 
-          {/* Recommandations de développement */}
-          {analysis.developpement && (
-            <>
-              {section("Notes de développement")}
-              <div style={{ fontSize: 12, color: th.soft, lineHeight: 1.7, borderLeft: `2px solid ${th.accent}`, paddingLeft: 12 }}>{analysis.developpement}</div>
-            </>
-          )}
-
-          {/* Profils casting */}
-          {analysis.casting_profils && analysis.casting_profils.length > 0 && (
-            <>
-              {section("Profils casting")}
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {analysis.casting_profils.map((c, i) => (
-                  <div key={i} style={{
+              {/* Positionnement budgétaire */}
+              {analysis.positionnement_budgetaire && (
+                <>
+                  {section("Positionnement budgétaire")}
+                  <div style={{
+                    fontSize: 12, color: th.soft, lineHeight: 1.7,
                     padding: "12px 14px", background: th.surfaceAlt,
                     borderRadius: 8, border: `1px solid ${th.border}`,
-                  }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: th.text, display: "block", marginBottom: 6 }}>{c.personnage}</span>
-                    <div style={{ fontSize: 11, color: th.soft, lineHeight: 1.5, marginBottom: 8 }}>{c.profil}</div>
-                    {c.suggestions && c.suggestions.length > 0 && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                        {c.suggestions.map((s, j) => (
-                          <div key={j} style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                            <a href={`https://www.allocine.fr/rechercher/?q=${encodeURIComponent(s.nom)}`}
-                              target="_blank" rel="noopener noreferrer"
-                              style={{
-                                display: "inline-block", padding: "3px 10px",
-                                background: th.accent + "15", border: `1px solid ${th.accent}40`,
-                                borderRadius: 16, fontSize: 13, fontWeight: 700,
-                                color: th.accent, textDecoration: "none", transition: "0.2s",
-                                cursor: "pointer", whiteSpace: "nowrap",
-                              }}
-                              onMouseEnter={(e) => { e.target.style.background = th.accent + "30"; }}
-                              onMouseLeave={(e) => { e.target.style.background = th.accent + "15"; }}
-                            >
-                              {s.nom}{s.agence ? ` · ${s.agence}` : ""}
-                            </a>
-                            <span style={{ fontSize: 11, color: th.soft }}>{s.raison}</span>
-                          </div>
-                        ))}
+                    borderLeft: `3px solid ${th.accent}`,
+                  }}>{analysis.positionnement_budgetaire}</div>
+                </>
+              )}
+            </>
+          )}
+
+          {/* ─── TAB: PRODUCTION ─── */}
+          {ficheTab === "production" && (
+            <>
+              {analysis.vigilance_production && analysis.vigilance_production.length > 0 && (
+                <>
+                  {section("Vigilance production")}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {analysis.vigilance_production.map((v, i) => (
+                      <div key={i} style={{
+                        padding: "10px 12px", background: th.surfaceAlt,
+                        borderRadius: 6, border: `1px solid ${th.border}`,
+                        borderLeft: `3px solid ${th.accent}`,
+                      }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: th.text }}>{v.point}</div>
                       </div>
-                    )}
-                    {/* Fallback pour ancien format */}
-                    {c.reference && !c.suggestions && (
-                      <div style={{ fontSize: 12, color: th.accent, marginTop: 4, fontWeight: 600 }}>{c.reference}</div>
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
+
+              {/* Stats production derived from parser */}
+              {section("Données structurelles")}
+              {kv("Scènes totales", stats.sceneCount)}
+              {kv("Intérieur / Extérieur", `${stats.intCount} INT / ${stats.extCount} EXT`)}
+              {kv("Jour / Nuit", `${stats.jourCount} jour / ${stats.nuitCount} nuit`)}
+              {kv("Personnages parlants", stats.charCount)}
+              {kv("Ratio dialogue/action", `${stats.dialPct}% / ${100 - stats.dialPct}%`)}
+              {kv("Durée estimée", `~${stats.estMinutes} min`)}
             </>
           )}
         </>
