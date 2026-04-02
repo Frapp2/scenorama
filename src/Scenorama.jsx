@@ -593,7 +593,11 @@ ${fullText}`;
           ).map((c) => ({
             personnage: c.personnage,
             profil: typeof c.profil === "string" ? c.profil : "",
-            reference: typeof c.reference === "string" ? c.reference : "",
+            suggestions: Array.isArray(c.suggestions) ? c.suggestions.filter((s) => s && s.nom).map((s) => ({
+              nom: s.nom,
+              agence: s.agence || "",
+              raison: s.raison || "",
+            })) : [],
           })) : [],
         };
 
